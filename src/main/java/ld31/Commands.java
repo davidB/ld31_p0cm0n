@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor=@__(@Inject))
 public class Commands {
 	public final Command<Boolean> exit = new Command<>("quit");
+	public final Command<Boolean> def = new Command<>("default");
 	public final Command<Float> moveZ = new Command<>("moveZ");
 	public final Command<Float> moveX = new Command<>("moveX");
 	public final Command<Float> rotateY = new Command<>("rotateY");

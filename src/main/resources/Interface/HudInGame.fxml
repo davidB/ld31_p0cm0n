@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
@@ -17,5 +18,15 @@
          </children>
       </VBox>
       <TextArea id="consoleLog" fx:id="consoleLog" editable="false" focusTraversable="false" layoutX="14.0" layoutY="14.0" maxHeight="-Infinity" opacity="0.4" prefHeight="197.0" prefWidth="310.0" wrapText="true" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="30.0" />
+      <HBox alignment="BOTTOM_RIGHT" layoutX="187.0" layoutY="199.0" AnchorPane.bottomAnchor="3.0" AnchorPane.rightAnchor="3.0">
+         <children>
+            <Button fx:id="settings" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%settings">
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="quit" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%quit" />
+         </children>
+      </HBox>
    </children>
 </AnchorPane>

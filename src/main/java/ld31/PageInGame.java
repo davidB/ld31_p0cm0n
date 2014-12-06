@@ -8,8 +8,6 @@ import jme3_ext.AppState0;
 import jme3_ext.Hud;
 import jme3_ext.HudTools;
 import jme3_ext.InputMapper;
-import jme3_ext.InputMapperHelpers;
-import jme3_ext.InputTextureFinder;
 import jme3_ext.PageManager;
 import jme3_ext_deferred.Helpers4Lights;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +16,8 @@ import rx.subscriptions.Subscriptions;
 import rx_ext.Iterable4AddRemove;
 
 import com.jme3.asset.AssetManager;
-import com.jme3.input.event.InputEvent;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
-import com.jme3.material.RenderState.BlendMode;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
@@ -43,10 +39,10 @@ public class PageInGame extends AppState0 {
 	private final HudTools hudTools;
 	private final Commands controls;
 	private final InputMapper inputMapper;
-	private final Provider<PageManager> pm;
-	private final InputTextureFinder inputTextureFinders;
+	private final Provider<PageManager> pm; // use Provider as Hack to break the dependency cycle PageManager -> Page -> PageManager
 	private final AppStateDeferredRendering appStateDeferredRendering;
 	private final AppStateDebug appStateDebug;
+	private final PageEnd pageEnd;
 
 	private Hud<HudInGame> hud;
 
@@ -55,7 +51,8 @@ public class PageInGame extends AppState0 {
 	final Control4Translation c4t = new Control4Translation();
 	int spawnEventCnt = 0;
 	final Tiles tiles = new Tiles();
-	public int pelletCount;
+	public int pelletTotal;
+	public int pelletAte;
 	final Spatial[] pellets = new Spatial[tiles.width * tiles.height];
 	public final TimeCounter timeCount = new TimeCounter();
 	public final float speedXMax = 12f;
@@ -65,51 +62,55 @@ public class PageInGame extends AppState0 {
 	@Override
 	protected void doInitialize() {
 		hud = hudTools.newHud("Interface/HudInGame.fxml", hudController);
+		app.getStateManager().attach(appStateDeferredRendering);
+		app.getStateManager().attach(appStateDebug);
+	}
+
+	void reset() {
+		doDisable();
+		doEnable();
 	}
 
 	@Override
 	protected void doEnable() {
-		app.getStateManager().attach(appStateDeferredRendering);
-		app.getStateManager().attach(appStateDebug);
 		hudTools.show(hud);
 		app.getInputManager().addRawInputListener(inputMapper.rawInputListener);
+		FxPlatformExecutor.runOnFxApplication(() -> {
+			HudInGame p = hud.controller;
+			p.settings.onActionProperty().set((v) -> {
+				app.enqueue(()-> {
+					pm.get().goTo(Pages.Settings.ordinal());
+					return true;
+				});
+			});
+			p.quit.onActionProperty().set((v) -> {
+				app.enqueue(()->{
+					app.stop();
+					return true;
+				});
+			});
+		});
 
 		inputSub = Subscriptions.from(
 			controls.exit.value.subscribe((v) -> {
-				if (!v) pm.get().goTo(Pages.Welcome.ordinal());
+				if (!v) hud.controller.quit.fire();
 			})
-			, inputMapper.last.subscribe((v) -> spawnEvent(v))
 			, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * speedXMax;})
 			, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -speedZMax;})
 			, controls.moveX.value.subscribe((v) -> {if (v != 0) timeCount.start();})
 			, controls.moveZ.value.subscribe((v) -> {if (v != 0) timeCount.start();})
 		);
-		setupCamera();
-		spawnScene();
-	}
-
-	@Override
-	protected void doDisable() {
-		unspawnScene();
-		app.getInputManager().removeRawInputListener(inputMapper.rawInputListener);
-		hudTools.hide(hud);
-		if (inputSub != null){
-			inputSub.unsubscribe();
-			inputSub = null;
-		}
-		app.getStateManager().detach(appStateDebug);
-		app.getStateManager().detach(appStateDeferredRendering);
-	}
-
-	private void eatPellet(int x, int z) {
-		PageInGame.this.tiles.removePellet(x, z);
-		Spatial s = PageInGame.this.pellets[x + z * tiles.width];
-		s.removeFromParent();
-		appStateDeferredRendering.processor.lights.ar.remove.onNext((Geometry)((Node)s).getChild("light"));
-		PageInGame.this.pellets[x + z * tiles.width] = null;
-		PageInGame.this.pelletCount -= 1;
+		app.enqueue(() -> {
+			setupCamera();
+			spawnScene();
+			activatePlayer(true);
+			return true;
+		});
+		timeCount.reset();
 		FxPlatformExecutor.runOnFxApplication(() -> {
-			hud.controller.pelletCount.setText(String.format("%d", pelletCount));
+			hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
+			hud.controller.timeCount.setText(String.format("%d", score()));
+			hud.controller.timeCount.requestFocus();
 		});
 	}
 
@@ -118,68 +119,76 @@ public class PageInGame extends AppState0 {
 		super.doUpdate(tpf);
 		if (timeCount.inc(tpf)) {
 			FxPlatformExecutor.runOnFxApplication(() -> {
-				hud.controller.timeCount.setText(String.format("%d", (timeMax - (long)Math.floor(timeCount.time))));
+				hud.controller.timeCount.setText(String.format("%d", score()));
 			});
 		}
 	}
 
+	@Override
+	protected void doDisable() {
+		app.enqueue(() -> {
+			unspawnScene();
+			return true;
+		});
+		app.getInputManager().removeRawInputListener(inputMapper.rawInputListener);
+		hudTools.hide(hud);
+		if (inputSub != null){
+			inputSub.unsubscribe();
+			inputSub = null;
+		}
+	}
+
+	@Override
+	protected void doDispose() {
+		// TODO Auto-generated method stub
+		super.doDispose();
+		app.getStateManager().detach(appStateDebug);
+		app.getStateManager().detach(appStateDeferredRendering);
+	}
+
+	private void eatPellet(int x, int z) {
+		Spatial s = PageInGame.this.pellets[x + z * tiles.width];
+		if (s != null) {
+			s.removeFromParent();
+			appStateDeferredRendering.processor.lights.ar.remove.onNext((Geometry)((Node)s).getChild("light"));
+			PageInGame.this.pellets[x + z * tiles.width] = null;
+			PageInGame.this.pelletAte += 1;
+			FxPlatformExecutor.runOnFxApplication(() -> {
+				hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
+			});
+		}
+		if (pelletAte >= pelletTotal) end();
+	}
+
+	public long score() {
+		return (timeMax - (long)Math.floor(timeCount.time));
+	}
+
+	private void end() {
+		timeCount.stop();
+		activatePlayer(false);
+		app.getStateManager().attach(pageEnd);
+	}
+
 	void spawnScene() {
-		app.enqueue(()-> {
-			timeCount.reset();
 			scene.getChildren().clear();
 			scene.attachChild(makePellets());
 			scene.attachChild(makePlayer());
 //			scene.attachChild(makeEnvironment());
 			app.getRootNode().attachChild(scene);
-			return true;
-		});
 	}
 
+	@SuppressWarnings("unchecked")
 	void unspawnScene() {
-		app.enqueue(()-> {
-			scene.removeFromParent();
-			Iterable4AddRemove<Geometry> lights = appStateDeferredRendering.processor.lights;
-			for(Geometry l : (Iterable<Geometry>)lights.data.clone()){lights.ar.remove.onNext(l);}
-			c4t.setSpatial(null);
-			return true;
-		});
+		scene.removeFromParent();
+		Iterable4AddRemove<Geometry> lights = appStateDeferredRendering.processor.lights;
+		for(Geometry l : (Iterable<Geometry>)lights.data.clone()){lights.ar.remove.onNext(l);}
+		c4t.setSpatial(null);
 	}
 
-	void spawnEvent(InputEvent evt) {
-		addInfo(InputMapperHelpers.toString(evt, false));
-		Quad q = new Quad(0.5f, 0.5f);
-		Geometry g = new Geometry("Quad", q);
-		Material mat = new Material(app.getAssetManager(), "Common/MatDefs/Misc/Unshaded.j3md");
-		//mat.setColor("Color", ColorRGBA.Blue);
-		String path = inputTextureFinders.findPath(evt);
-		mat.setTexture("ColorMap", app.getAssetManager().loadTexture(path));
-		mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
-		g.setQueueBucket(Bucket.Transparent);
-		g.setMaterial(mat);
-
-		BillboardControl billboard = new BillboardControl();
-		g.addControl(billboard);
-
-		spawnEventCnt++;
-//		Animation anim = new Animation("goUp", 6.0f);
-//		anim.addTrack(new TranslationTrack(new Vector3f((spawnEventCnt % 10) - 5f,10f,0f), 5.0f));
-//		anim.addTrack(new RemoveTrack(5.0f));
-//		AnimControl ac = new AnimControl();
-//		ac.addAnim(anim);
-//		g.addControl(ac);
-
-//		g.setLocalTranslation(scene.getChild("player").getWorldTranslation());
-//		app.enqueue(()-> {
-//			scene.attachChild(g);
-//			AnimChannel c = ac.createChannel();
-//			c.setLoopMode(LoopMode.DontLoop);
-//			c.setAnim("goUp");
-//			return true;
-//		});
-	}
 	void setupCamera() {
 		Camera cam = app.getCamera();
-		Vector3f target = new Vector3f(tiles.width * 0.5f, 0f, tiles.height * 0.5f);
+		Vector3f target = new Vector3f(tiles.width * 0.5f + 6f, 0f, tiles.height * 0.5f);
 		float tan = cam.getFrustumTop() / cam.getFrustumNear(); //top = FastMath.tan(fovY * FastMath.DEG_TO_RAD * .5f) * near
 		float marginZ = 2f;
 		float y = ((tiles.width * 0.5f) + marginZ)  / tan;
@@ -200,30 +209,47 @@ public class PageInGame extends AppState0 {
 //	}
 
 	Spatial makePlayer() {
-		Node root = new Node("player");
-		ColorRGBA color = ColorRGBA.Yellow;
-		//Geometry g = new Geometry("Player", new Sphere(16, 16, 0.7f));
-		Geometry g = new Geometry("Player", new Box(0.7f, 0.7f, 0.7f));
-		Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
-		mat.setColor("Color", color);
-		g.setMaterial(mat);
-		root.attachChild(g);
+		Node root = (Node) app.getRootNode().getChild("player");
+		if (root == null) {
+			root = new Node("player");
 
-		Geometry light = Helpers4Lights.newSpotLight("playerLight", 10f, 1000f, color, app.getAssetManager());
-		light.setLocalTranslation(0, 5f - 1f, 0);
-		root.attachChild(light);
-		//dsp.addLight(pointLight, true);
-		appStateDeferredRendering.processor.lights.ar.add.onNext(light);
+			ColorRGBA color = ColorRGBA.Yellow;
+			//Geometry g = new Geometry("Player", new Sphere(16, 16, 0.7f));
+			Geometry g = new Geometry("Player", new Box(0.7f, 0.7f, 0.7f));
+			Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
+			mat.setColor("Color", color);
+			g.setMaterial(mat);
+			root.attachChild(g);
 
-		root.addControl(c4t);
-		root.addControl(new Control4EatPellet());
+			Geometry light = Helpers4Lights.newSpotLight("playerLight", 10f, 1000f, color, app.getAssetManager());
+			light.setLocalTranslation(0, 5f - 1f, 0);
+			root.attachChild(light);
+			//dsp.addLight(pointLight, true);
+			appStateDeferredRendering.processor.lights.ar.add.onNext(light);
+		}
+
 		translateToTile(root, 14, 17, 0);
+		activatePlayer(false);
 		return root;
+	}
+
+	void activatePlayer(boolean v) {
+		Node root = (Node) app.getRootNode().getChild("player");
+		if (root != null) {
+			if (v) {
+				root.addControl(c4t);
+				root.addControl(new Control4EatPellet());
+			} else {
+				root.removeControl(c4t);
+				root.removeControl(Control4EatPellet.class);
+			}
+		}
 	}
 
 	Spatial makePellets(){
 		Node root = new Node("pellets");
-		pelletCount = 0;
+		pelletTotal = 0;
+		pelletAte = 0;
 		for(int x = 0 ; x < tiles.width; x++) {
 			for(int z = 0 ; z < tiles.height; z++) {
 				int id = x + z * tiles.width;
@@ -235,7 +261,7 @@ public class PageInGame extends AppState0 {
 					translateToTile(pellet, x, z, 0.4f);
 					root.attachChild(pellet);
 					pellets[id] = pellet;
-					pelletCount++;
+					pelletTotal++;
 				}
 			}
 		}
@@ -332,106 +358,8 @@ public class PageInGame extends AppState0 {
 		@Override
 		protected void controlRender(RenderManager rm, ViewPort vp) {
 		}
-
 	}
 }
 
 
-class Tiles {
-	final static int tiles_pacmanclassic_W = 28;
-	final static int tiles_pacmanclassic_H = 31;
-	final static int[] tiles_pacmanclassic = {
-		00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,
-		00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,	00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,
-		00,	07,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	07,	00,
-		00,	11,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	11,	00,
-		00,	07,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	07,	00,
-		00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,
-		00,	07,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	07,	00,
-		00,	07,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	07,	00,
-		00,	07,	07,	07,	07,	07,	07,	00,	00,	07,	07,	07,	07,	00,	00,	07,	07,	07,	07,	00,	00,	07,	07,	07,	07,	07,	07,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	01,	01,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	01,	01,	01,	01,	01,	01,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,	01,	01,	01,	01,	01,	01,	00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	01,	01,	01,	01,	01,	01,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,
-		00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,	00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,
-		00,	07,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	07,	00,
-		00,	07,	00,	00,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	07,	00,	00,	00,	00,	07,	00,
-		00,	11,	07,	07,	00,	00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,	00,	07,	07,	11,	00,
-		00,	00,	00,	07,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	07,	00,	00,	00,
-		00,	00,	00,	07,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	07,	00,	00,	00,
-		00,	07,	07,	07,	07,	07,	07,	00,	00,	07,	07,	07,	07,	00,	00,	07,	07,	07,	07,	00,	00,	07,	07,	07,	07,	07,	07,	00,
-		00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,
-		00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,	00,	07,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	07,	00,
-		00,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	07,	00,
-		00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,	00,
-	};
 
-	public final static int EMPTY			= 0x00;
-	public final static int GHOST_ALLOWED	= 0x01;
-	public final static int PLAYER_ALLOWED	= 0x02;
-	public final static int PELLET			= 0x04;
-	public final static int ENERGIZER		= 0x08;
-
-	public final int width = tiles_pacmanclassic_W;
-	public final int height = tiles_pacmanclassic_H;
-	private final int[] tiles = new int[width * height];
-
-	public Tiles() {
-		reset();
-	}
-
-	public void reset() {
-		System.arraycopy(tiles_pacmanclassic, 0, tiles, 0, tiles.length);
-	}
-
-	public int tile(int x, int y) {
-		return tiles[x + y * width];
-	}
-
-	public boolean has(int mask, int x, int y) {
-		int v = (x < 0 || x >= width || y < 0 || y >= height)? PLAYER_ALLOWED : tiles[x + y * width];
-		return (v == mask) || ((v & mask) != 0); // first test to match EMPTY mask
-	}
-
-	public int removePellet(int x, int y) {
-		int v = tiles[x + y * width] & ~PELLET;
-		tiles[x + y * width] = v;
-		return v;
-	}
-
-	public int removeEnergizer(int x, int y) {
-		int v = tiles[x + y * width] & ~ENERGIZER;
-		tiles[x + y * width] = v;
-		return v;
-	}
-}
-
-class TimeCounter {
-	public float time = 0;
-
-	void reset() {
-		time = 0;
-	}
-
-	void start() {
-		if (time == 0) time = 0.001f;
-	}
-
-	boolean inc(float tpf) {
-		long t0 = (long)Math.floor(time);
-		boolean b = false;
-		if (time > 0){
-			time += (tpf * 2);
-			b = (long)Math.floor(time) != t0;
-		}
-		return b;
-	}
-}

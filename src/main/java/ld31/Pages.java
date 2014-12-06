@@ -3,11 +3,11 @@ package ld31;
 
 enum Pages {
 
-	Welcome,
+	//Welcome,
 	//        LevelSelection,
 	InGame,
 	//        Loading,
-	//        Result,
+	//........Result,
 	Settings,
 	//        About,
 	//        Scores,

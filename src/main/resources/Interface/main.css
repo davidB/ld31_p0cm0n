@@ -44,14 +44,22 @@
 	-fx-scale-y: 1.1;
 }
 #hudWelcome {
-	-fx-background-image: url("../Textures/350x150.gif");
-	-fx-background-size: contain;
-	-fx-background-repeat: no-repeat;
-	-fx-background-position: center center;
 }
 
 #hudInGame * {
 	-fx-background-color: transparent;
+}
+#hudSettings {
+	-fx-background-color: black;
+}
+#hudEnd {
+	-fx-background-color: rgba(1.0, 1.0, 1.0, 0.6);
+}
+#time, #timeCount {
+	-fx-font-size: 3em;
+}
+#hudEnd #timeCount {
+	-fx-font-size: 10em;
 }
 #consoleLog {
 	-fx-opacity: 0.85;

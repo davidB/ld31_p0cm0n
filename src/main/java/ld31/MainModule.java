@@ -137,7 +137,7 @@ class MainModule {
 
 	@Singleton
 	@Provides
-	public PageManager pageManager(SimpleApplication app, PageWelcome pageWelcome, PageSettings pageSettings, PageInGame pageInGame) {
+	public PageManager pageManager(SimpleApplication app, PageSettings pageSettings, PageInGame pageInGame) {
 		AppState[] pages = new AppState[Pages.values().length];
 		/*
          pages[Page.About.ordinal()] = new PageAbout(screen);
@@ -148,7 +148,7 @@ class MainModule {
          pages[Page.Scores.ordinal()] = new PageScores(screen);
          pages[Page.Settings.ordinal()] = new PageSettings(screen);
 		 */
-		pages[Pages.Welcome.ordinal()] = pageWelcome;
+		//pages[Pages.Welcome.ordinal()] = pageWelcome;
 		pages[Pages.InGame.ordinal()] = pageInGame;
 		pages[Pages.Settings.ordinal()] = pageSettings;
 		PageManager pageManager = new PageManager(app.getStateManager(), pages);
@@ -180,6 +180,7 @@ class MainModule {
 		//TODO save / restore mapper, until then harcoded mapping
 		InputMapper m = new InputMapper();
 		InputMapperHelpers.mapKey(m, KeyInput.KEY_ESCAPE, controls.exit.value);
+		InputMapperHelpers.mapKey(m, KeyInput.KEY_RETURN, controls.def.value);
 		// arrow
 		InputMapperHelpers.mapKey(m, KeyInput.KEY_UP, controls.moveZ.value, true);
 		InputMapperHelpers.mapKey(m, KeyInput.KEY_DOWN, controls.moveZ.value, false);

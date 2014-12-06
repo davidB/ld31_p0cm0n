@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import jme3_ext.AppState0;
-import jme3_ext.AudioManager;
 import jme3_ext.Hud;
 import jme3_ext.HudTools;
 import jme3_ext.InputMapper;
@@ -21,7 +20,7 @@ import com.jme3x.jfx.FxPlatformExecutor;
 public class PageSettings extends AppState0{
 	private final HudTools hudTools;
 	private final Provider<PageManager> pm; // use Provider as Hack to break the dependency cycle PageManager -> Page -> PageManager
-	private final AudioManager audioMgr;
+	//private final AudioManager audioMgr;
 	private final HudSettings hudSettings;
 	private final InputMapper inputMapper;
 	private final Commands commands;
@@ -77,7 +76,7 @@ public class PageSettings extends AppState0{
 
 			p.back.onActionProperty().set((e) -> {
 				app.enqueue(()-> {
-					pm.get().goTo(Pages.Welcome.ordinal());
+					pm.get().goTo(Pages.InGame.ordinal());
 					return true;
 				});
 			});
@@ -85,7 +84,7 @@ public class PageSettings extends AppState0{
 
 		inputSub = Subscriptions.from(
 			commands.exit.value.subscribe((v) -> {
-				if (!v) hud.controller.back.fire();
+				if (!v) pm.get().goTo(Pages.InGame.ordinal());//hud.controller.back.fire();
 			})
 		);
 	}

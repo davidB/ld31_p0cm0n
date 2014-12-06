@@ -103,9 +103,9 @@
       </HBox>
    </top>
    <bottom>
-      <HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
+      <HBox alignment="BOTTOM_RIGHT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
          <children>
-            <Button fx:id="back" mnemonicParsing="false" text="back" />
+            <Button fx:id="back" mnemonicParsing="false" text="back" textAlignment="CENTER" />
          </children>
       </HBox>
    </bottom>
