@@ -1,0 +1,93 @@
+buildscript {
+	repositories {
+		jcenter()
+		mavenLocal()
+	}
+	dependencies {
+		classpath "net.alchim31.gradle:gradle-getdown-plugin:0.3.2"
+	}
+}
+//apply plugin: 'application'
+apply plugin: 'net.alchim31.getdown'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+// NetBeans will automatically add "run" and "debug" tasks relying on the
+// "mainClass" property. You may however define the property prior executing
+// tasks by passing a "-PmainClass=<QUALIFIED_CLASS_NAME>" argument.
+//
+// Note however, that you may define your own "run" and "debug" task if you
+// prefer. In this case NetBeans will not add these tasks but you may rely on
+// your own implementation.
+def mainClass = (!hasProperty('mainClass')) ? 'ld31.Main' : ext.mainClass
+
+version = '0.1.0'
+group = 'net.alchim31.games'
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+	maven { url "http://updates.jmonkeyengine.org/maven/"}
+	maven { url "http://dl.bintray.com/jmonkeyengine/contrib" }
+}
+
+def v_jme = '3.0.10' //'3.1.0-snapshot-github'
+def v_slf4j = '1.7.7'
+
+dependencies {
+	compile 'org.projectlombok:lombok:1.14.2'
+	compile "com.jme3:jme3-core:${v_jme}"
+	compile "org.slf4j:slf4j-api:${v_slf4j}"
+	//compile "com.jme3x:jfx:1.20140928141716.3a27fb5"
+	compile "com.jme3x:jfx:1.+"
+	compile 'com.squareup.dagger:dagger:1.2.2'
+	compile 'com.squareup.dagger:dagger-compiler:1.2.2'
+	compile 'com.netflix.rxjava:rxjava-core:0.19.2'
+	compile 'net.alchim31.jme3:jme3_ext:0.1.0'
+	compile 'net.alchim31.jme3:jme3_ext_deferred:0.1.0'
+	runtime "com.jme3:jme3-lwjgl:${v_jme}"
+	runtime("com.jme3:jme3-desktop:${v_jme}"){
+		exclude module: "jinput"
+	}
+	runtime 'net.java.jinput:jinput:2.0.6'
+	runtime "com.jme3:jme3-jogg:${v_jme}"
+	//runtime "org.slf4j:slf4j-jdk14:${v_slf4j}"
+	compile "org.slf4j:jul-to-slf4j:${v_slf4j}"
+	runtime 'ch.qos.logback:logback-classic:1.1.2'
+	testCompile 'junit:junit:4.11'
+	testCompile 'org.mockito:mockito-core:1.8.5'
+}
+
+sourceSets {
+	main {
+		resources {
+			srcDirs = ["$projectDir/src/main/resources", "$projectDir/src/main/assets", "$projectDir/assets"]
+			exclude "**/*.blend*"
+		}
+	}
+}
+
+task copyDeps(type: Copy) {
+	description 'copy runtime + testRuntime dependencies into lib/ dir to allow other tools (jme3-SDK, eclipse apt-processor) to use libs'
+	from (configurations.runtime + configurations.testCompile)
+	into 'lib'
+}
+
+getdown {
+	urlbase = "http://alchim31.net/download/ld31"
+	mainClassName = mainClass
+	jvmArgs = ["-ea"]
+	checklatest = false
+	//platforms = [Platform.LINUX_I586, Platform.LINUX_X64, Platform.WINDOWS_I586] //Platform.values()
+	//platforms = [Platform.LINUX_I586] //Platform.values()
+	tmplGetdownTxt = tmplGetdownTxt + "\nallow_offline = true"
+}
+//project.afterEvaluate {
+//	project.getdown.distSpec.eachFile {
+//		println "$it.name"
+//	}
+//}
