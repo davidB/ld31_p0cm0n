@@ -19,4 +19,7 @@ public class HudInGame {
 
 	@FXML
 	public Label pelletCount;
+
+	@FXML
+	public Label timeCount;
 }

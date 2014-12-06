@@ -1,9 +1,6 @@
 /// License [CC0](http://creativecommons.org/publicdomain/zero/1.0/)
 package ld31;
 
-import javafx.scene.effect.Effect;
-import javafx.scene.effect.Glow;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -20,34 +17,24 @@ import rx.Subscription;
 import rx.subscriptions.Subscriptions;
 import rx_ext.Iterable4AddRemove;
 
-import com.jme3.animation.AnimChannel;
-import com.jme3.animation.AnimControl;
-import com.jme3.animation.Animation;
-import com.jme3.animation.LoopMode;
 import com.jme3.asset.AssetManager;
 import com.jme3.input.event.InputEvent;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
 import com.jme3.material.RenderState.BlendMode;
 import com.jme3.math.ColorRGBA;
-import com.jme3.math.FastMath;
-import com.jme3.math.Plane;
-import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
 import com.jme3.renderer.queue.RenderQueue.Bucket;
-import com.jme3.scene.CameraNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.control.AbstractControl;
 import com.jme3.scene.control.BillboardControl;
-import com.jme3.scene.debug.Grid;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Quad;
-import com.jme3.scene.shape.Sphere;
 import com.jme3x.jfx.FxPlatformExecutor;
 
 @RequiredArgsConstructor(onConstructor=@__(@Inject))
@@ -70,6 +57,10 @@ public class PageInGame extends AppState0 {
 	final Tiles tiles = new Tiles();
 	public int pelletCount;
 	final Spatial[] pellets = new Spatial[tiles.width * tiles.height];
+	public final TimeCounter timeCount = new TimeCounter();
+	public final float speedXMax = 12f;
+	public final float speedZMax = 12f;
+	public final long timeMax = (long)(((((float)tiles.width) / speedXMax) * tiles.height + (((float)tiles.height) / speedZMax)));
 
 	@Override
 	protected void doInitialize() {
@@ -88,8 +79,10 @@ public class PageInGame extends AppState0 {
 				if (!v) pm.get().goTo(Pages.Welcome.ordinal());
 			})
 			, inputMapper.last.subscribe((v) -> spawnEvent(v))
-			, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * 2f;})
-			, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -2f;})
+			, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * speedXMax;})
+			, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -speedZMax;})
+			, controls.moveX.value.subscribe((v) -> {if (v != 0) timeCount.start();})
+			, controls.moveZ.value.subscribe((v) -> {if (v != 0) timeCount.start();})
 		);
 		setupCamera();
 		spawnScene();
@@ -116,12 +109,23 @@ public class PageInGame extends AppState0 {
 		PageInGame.this.pellets[x + z * tiles.width] = null;
 		PageInGame.this.pelletCount -= 1;
 		FxPlatformExecutor.runOnFxApplication(() -> {
-			hud.controller.pelletCount.setText(String.format("%2d", pelletCount));
+			hud.controller.pelletCount.setText(String.format("%d", pelletCount));
 		});
+	}
+
+	@Override
+	protected void doUpdate(float tpf) {
+		super.doUpdate(tpf);
+		if (timeCount.inc(tpf)) {
+			FxPlatformExecutor.runOnFxApplication(() -> {
+				hud.controller.timeCount.setText(String.format("%d", (timeMax - (long)Math.floor(timeCount.time))));
+			});
+		}
 	}
 
 	void spawnScene() {
 		app.enqueue(()-> {
+			timeCount.reset();
 			scene.getChildren().clear();
 			scene.attachChild(makePellets());
 			scene.attachChild(makePlayer());
@@ -407,5 +411,27 @@ class Tiles {
 		int v = tiles[x + y * width] & ~ENERGIZER;
 		tiles[x + y * width] = v;
 		return v;
+	}
+}
+
+class TimeCounter {
+	public float time = 0;
+
+	void reset() {
+		time = 0;
+	}
+
+	void start() {
+		if (time == 0) time = 0.001f;
+	}
+
+	boolean inc(float tpf) {
+		long t0 = (long)Math.floor(time);
+		boolean b = false;
+		if (time > 0){
+			time += (tpf * 2);
+			b = (long)Math.floor(time) != t0;
+		}
+		return b;
 	}
 }
