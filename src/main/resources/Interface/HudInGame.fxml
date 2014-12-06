@@ -7,14 +7,13 @@
 
 <AnchorPane id="hudInGame" prefHeight="225.0" prefWidth="331.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <TextArea id="consoleLog" fx:id="consoleLog" editable="false" focusTraversable="false" layoutX="14.0" layoutY="14.0" maxHeight="-Infinity" opacity="0.4" prefHeight="197.0" prefWidth="310.0" wrapText="true" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="30.0" />
-      <HBox alignment="TOP_CENTER" maxWidth="1.7976931348623157E308" spacing="15.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <VBox layoutX="234.0" AnchorPane.bottomAnchor="25.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <Label fx:id="action1" focusTraversable="false" styleClass="action" text="%action1" />
-            <Label fx:id="action2" focusTraversable="false" styleClass="action" text="%action2" />
-            <Label fx:id="action3" focusTraversable="false" styleClass="action" text="%action3" />
-            <Label fx:id="action4" focusTraversable="false" styleClass="action" text="%action4" />
+            <Label fx:id="title" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" styleClass="title" text="%title" textAlignment="CENTER" VBox.vgrow="ALWAYS" />
+            <Label fx:id="pellet" focusTraversable="false" styleClass="action" text="%pellet" />
+            <Label fx:id="pelletCount" alignment="CENTER_RIGHT" contentDisplay="RIGHT" styleClass="action" text="0" />
          </children>
-      </HBox>
+      </VBox>
+      <TextArea id="consoleLog" fx:id="consoleLog" editable="false" focusTraversable="false" layoutX="14.0" layoutY="14.0" maxHeight="-Infinity" opacity="0.4" prefHeight="197.0" prefWidth="310.0" wrapText="true" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="30.0" />
    </children>
 </AnchorPane>

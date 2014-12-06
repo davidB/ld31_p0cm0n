@@ -18,14 +18,5 @@ public class HudInGame {
 	public TextArea consoleLog;
 
 	@FXML
-	public Label action1;
-
-	@FXML
-	public Label action2;
-
-	@FXML
-	public Label action3;
-
-	@FXML
-	public Label action4;
+	public Label pelletCount;
 }

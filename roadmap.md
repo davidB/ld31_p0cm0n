@@ -1,7 +1,7 @@
 # core
 x display regular pellet in correct place (pellet are lights)
 x display a pacman (cube) that move via control only on allowed tile (keyboard control / ZQSD/WASD / arrow)
-- pacman eat pellet => pellet disapear, countdown pellet
+x pacman eat pellet => pellet disappear, countdown pellet
 - display timer on hud
 - 0 pellet => end screen overlay + retry button
 - add speed power (x3) to pacman + juicy ribon/tail

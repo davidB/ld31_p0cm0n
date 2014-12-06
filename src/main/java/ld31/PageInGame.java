@@ -68,6 +68,8 @@ public class PageInGame extends AppState0 {
 	final Control4Translation c4t = new Control4Translation();
 	int spawnEventCnt = 0;
 	final Tiles tiles = new Tiles();
+	public int pelletCount;
+	final Spatial[] pellets = new Spatial[tiles.width * tiles.height];
 
 	@Override
 	protected void doInitialize() {
@@ -86,10 +88,6 @@ public class PageInGame extends AppState0 {
 				if (!v) pm.get().goTo(Pages.Welcome.ordinal());
 			})
 			, inputMapper.last.subscribe((v) -> spawnEvent(v))
-			, controls.action1.value.subscribe((v) -> action1(v))
-			, controls.action2.value.subscribe((v) -> action2(v))
-			, controls.action3.value.subscribe((v) -> action3(v))
-			, controls.action4.value.subscribe((v) -> action4(v))
 			, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * 2f;})
 			, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -2f;})
 		);
@@ -110,26 +108,15 @@ public class PageInGame extends AppState0 {
 		app.getStateManager().detach(appStateDeferredRendering);
 	}
 
-	private void action1(Boolean v) {
-		action(v, hud.controller.action1);
-	}
-
-	private void action2(Boolean v) {
-		action(v, hud.controller.action2);
-	}
-
-	private void action3(Boolean v) {
-		action(v, hud.controller.action3);
-	}
-
-	private void action4(Boolean v) {
-		action(v, hud.controller.action4);
-	}
-
-	private void action(Boolean v, javafx.scene.Node n) {
+	private void eatPellet(int x, int z) {
+		PageInGame.this.tiles.removePellet(x, z);
+		Spatial s = PageInGame.this.pellets[x + z * tiles.width];
+		s.removeFromParent();
+		appStateDeferredRendering.processor.lights.ar.remove.onNext((Geometry)((Node)s).getChild("light"));
+		PageInGame.this.pellets[x + z * tiles.width] = null;
+		PageInGame.this.pelletCount -= 1;
 		FxPlatformExecutor.runOnFxApplication(() -> {
-			Effect e = (v) ? new Glow(0.8): null;
-			n.setEffect(e);
+			hud.controller.pelletCount.setText(String.format("%2d", pelletCount));
 		});
 	}
 
@@ -225,19 +212,26 @@ public class PageInGame extends AppState0 {
 		appStateDeferredRendering.processor.lights.ar.add.onNext(light);
 
 		root.addControl(c4t);
+		root.addControl(new Control4EatPellet());
 		translateToTile(root, 14, 17, 0);
 		return root;
 	}
 
 	Spatial makePellets(){
 		Node root = new Node("pellets");
+		pelletCount = 0;
 		for(int x = 0 ; x < tiles.width; x++) {
 			for(int z = 0 ; z < tiles.height; z++) {
+				int id = x + z * tiles.width;
+				pellets[id] = null;
 				//System.out.printf(">> %d, %d = %d / %s \n", x, z, tiles.tile(x, z), tiles.has(Tiles.PELLET, x, z));
 				if (tiles.has(Tiles.PELLET, x, z)){
 					Spatial pellet = makePellet();
+					pellet.setName("p" + id);
 					translateToTile(pellet, x, z, 0.4f);
 					root.attachChild(pellet);
+					pellets[id] = pellet;
+					pelletCount++;
 				}
 			}
 		}
@@ -310,6 +304,24 @@ public class PageInGame extends AppState0 {
 				getSpatial().setLocalTranslation(nx, v3.y, v3.z);
 			} else if (speedZ != 0 && PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(v3.x), (int)Math.floor(nz+Math.signum(speedZ) * 0.5))) {
 				getSpatial().setLocalTranslation(v3.x, v3.y, nz);
+			}
+		}
+
+		@Override
+		protected void controlRender(RenderManager rm, ViewPort vp) {
+		}
+
+	}
+
+	class Control4EatPellet extends AbstractControl {
+		private Vector3f v3 = new Vector3f();
+		@Override
+		protected void controlUpdate(float tpf) {
+			v3.set(getSpatial().getLocalTranslation());
+			int x = (int)Math.floor(v3.x);
+			int z = (int)Math.floor(v3.z);
+			if (PageInGame.this.tiles.has(Tiles.PELLET, x, z)) {
+				eatPellet(x,z);
 			}
 		}
 

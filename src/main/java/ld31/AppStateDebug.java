@@ -24,10 +24,10 @@ public class AppStateDebug extends AppState0 {
 
 		app.getInputManager().setCursorVisible(true);
 		//app.getViewPort().setBackgroundColor(v? ColorRGBA.Pink : ColorRGBA.White);
-		AppStateDeferredRendering r = app.getStateManager().getState(AppStateDeferredRendering.class);
-		if (r != null) {
-			app.getStateManager().attach(new AppState4ViewDeferredTexture(r.processor, AppState4ViewDeferredTexture.ViewKey.values()));
-		}
+//		AppStateDeferredRendering r = app.getStateManager().getState(AppStateDeferredRendering.class);
+//		if (r != null) {
+//			app.getStateManager().attach(new AppState4ViewDeferredTexture(r.processor, AppState4ViewDeferredTexture.ViewKey.values()));
+//		}
 		//Display.setResizable(v);
 	}
 
