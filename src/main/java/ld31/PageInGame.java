@@ -31,6 +31,8 @@ import com.jme3.material.RenderState;
 import com.jme3.material.RenderState.BlendMode;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
+import com.jme3.math.Plane;
+import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
@@ -43,6 +45,7 @@ import com.jme3.scene.Spatial;
 import com.jme3.scene.control.AbstractControl;
 import com.jme3.scene.control.BillboardControl;
 import com.jme3.scene.debug.Grid;
+import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Quad;
 import com.jme3.scene.shape.Sphere;
 import com.jme3x.jfx.FxPlatformExecutor;
@@ -135,7 +138,7 @@ public class PageInGame extends AppState0 {
 			scene.getChildren().clear();
 			scene.attachChild(makePellets());
 			scene.attachChild(makePlayer());
-			//scene.attachChild(makeEnvironment());
+//			scene.attachChild(makeEnvironment());
 			app.getRootNode().attachChild(scene);
 			return true;
 		});
@@ -192,15 +195,37 @@ public class PageInGame extends AppState0 {
 		cam.setLocation(new Vector3f(0,y,0).addLocal(target));
 		cam.lookAt(target, new Vector3f(0, 0, -1));
 	}
+//	Spatial makeEnvironment() {
+//		Node root = new Node("environment");
+//		ColorRGBA color = ColorRGBA.White;
+//		Geometry g = new Geometry("Player", new Quad(tiles.width, tiles.height));
+//		g.center();
+//		Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
+//		mat.setColor("Color", color);
+//		g.setMaterial(mat);
+//		root.attachChild(g);
+//		//root.setLocalTranslation(root.getLocalTranslation().add(0, 0, tiles.height * 0.5f));
+//		return root;
+//	}
+
 	Spatial makePlayer() {
 		Node root = new Node("player");
-		Geometry g = new Geometry("Player", new Sphere(16, 16, 0.5f));
-		Material mat = new Material(app.getAssetManager(), "Common/MatDefs/Misc/Unshaded.j3md");
-		mat.setColor("Color", ColorRGBA.Red);
+		ColorRGBA color = ColorRGBA.Yellow;
+		//Geometry g = new Geometry("Player", new Sphere(16, 16, 0.7f));
+		Geometry g = new Geometry("Player", new Box(0.7f, 0.7f, 0.7f));
+		Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
+		mat.setColor("Color", color);
 		g.setMaterial(mat);
 		root.attachChild(g);
 
+		Geometry light = Helpers4Lights.newSpotLight("playerLight", 10f, 1000f, color, app.getAssetManager());
+		light.setLocalTranslation(0, 5f - 1f, 0);
+		root.attachChild(light);
+		//dsp.addLight(pointLight, true);
+		appStateDeferredRendering.processor.lights.ar.add.onNext(light);
+
 		root.addControl(c4t);
+		translateToTile(root, 14, 17, 0);
 		return root;
 	}
 
@@ -211,7 +236,7 @@ public class PageInGame extends AppState0 {
 				//System.out.printf(">> %d, %d = %d / %s \n", x, z, tiles.tile(x, z), tiles.has(Tiles.PELLET, x, z));
 				if (tiles.has(Tiles.PELLET, x, z)){
 					Spatial pellet = makePellet();
-					pellet.setLocalTranslation(x + 0.5f, 0, z + 0.5f);
+					translateToTile(pellet, x, z, 0.4f);
 					root.attachChild(pellet);
 				}
 			}
@@ -243,7 +268,7 @@ public class PageInGame extends AppState0 {
 		n.attachChild(anchor0);
 
 		//pointLight.setColor(ColorRGBA.randomColor().multLocal(0.1f));
-		Geometry pointLight = Helpers4Lights.newPointLight("light", 1.2f, color, assetManager);
+		Geometry pointLight = Helpers4Lights.newPointLight("light", 2f, color, assetManager);
 		pointLight.center();
 		n.attachChild(pointLight);
 		//dsp.addLight(pointLight, true);
@@ -261,15 +286,31 @@ public class PageInGame extends AppState0 {
 		});
 	}
 
+	void fromTile(Vector3f store, int x, int y) {
+		store.set(x + 0.5f, 0, y + 0.5f);
+	}
+
+	void translateToTile(Spatial store, int x, int z, float y) {
+		store.setLocalTranslation(x + 0.5f, y, z + 0.5f);
+	}
+
 	class Control4Translation extends AbstractControl {
 		public float speedX = 0f;
 		public float speedZ = 0f;
+		private Vector3f v3 = new Vector3f();
 		@Override
 		protected void controlUpdate(float tpf) {
-			Vector3f pos = getSpatial().getLocalTranslation();
-			pos.x += speedX * tpf;
-			pos.z += speedZ * tpf;
-			getSpatial().setLocalTranslation(pos);
+			v3.set(getSpatial().getLocalTranslation());
+			// loop from top to bottom, left to right
+			float nx = ((float)tiles.width + v3.x + speedX * tpf) % ((float)tiles.width);
+			float nz = ((float)tiles.height + v3.z + speedZ * tpf) % ((float)tiles.height);
+			if (PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(speedX) * 0.5), (int)Math.floor(nz+Math.signum(speedZ) * 0.5))) {
+				getSpatial().setLocalTranslation(nx, v3.y, nz);
+			} else if (speedX != 0 && PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(speedX) * 0.5), (int)Math.floor(v3.z))) {
+				getSpatial().setLocalTranslation(nx, v3.y, v3.z);
+			} else if (speedZ != 0 && PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(v3.x), (int)Math.floor(nz+Math.signum(speedZ) * 0.5))) {
+				getSpatial().setLocalTranslation(v3.x, v3.y, nz);
+			}
 		}
 
 		@Override
@@ -340,7 +381,7 @@ class Tiles {
 	}
 
 	public boolean has(int mask, int x, int y) {
-		int v = tiles[x + y * width];
+		int v = (x < 0 || x >= width || y < 0 || y >= height)? PLAYER_ALLOWED : tiles[x + y * width];
 		return (v == mask) || ((v & mask) != 0); // first test to match EMPTY mask
 	}
 
