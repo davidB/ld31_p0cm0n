@@ -16,6 +16,8 @@ import rx.subscriptions.Subscriptions;
 import rx_ext.Iterable4AddRemove;
 
 import com.jme3.asset.AssetManager;
+import com.jme3.audio.AudioNode;
+import com.jme3.audio.Environment;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
@@ -93,14 +95,14 @@ public class PageInGame extends AppState0 {
 		});
 
 		inputSub = Subscriptions.from(
-			controls.exit.value.subscribe((v) -> {
-				if (!v) hud.controller.quit.fire();
-			})
-			, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * speedXMax;})
-			, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -speedZMax;})
-			, controls.moveX.value.subscribe((v) -> {if (v != 0) timeCount.start();})
-			, controls.moveZ.value.subscribe((v) -> {if (v != 0) timeCount.start();})
-		);
+				controls.exit.value.subscribe((v) -> {
+					if (!v) hud.controller.quit.fire();
+				})
+				, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * speedXMax;})
+				, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -speedZMax;})
+				, controls.moveX.value.subscribe((v) -> {if (v != 0) timeCount.start();})
+				, controls.moveZ.value.subscribe((v) -> {if (v != 0) timeCount.start();})
+				);
 		app.enqueue(() -> {
 			setupCamera();
 			spawnScene();
@@ -175,11 +177,11 @@ public class PageInGame extends AppState0 {
 	}
 
 	void spawnScene() {
-			scene.getChildren().clear();
-			scene.attachChild(makePellets());
-			scene.attachChild(makePlayer());
-//			scene.attachChild(makeEnvironment());
-			app.getRootNode().attachChild(scene);
+		scene.getChildren().clear();
+		scene.attachChild(makePellets());
+		scene.attachChild(makePlayer());
+		//			scene.attachChild(makeEnvironment());
+		app.getRootNode().attachChild(scene);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -198,6 +200,10 @@ public class PageInGame extends AppState0 {
 		float y = ((tiles.width * 0.5f) + marginZ)  / tan;
 		cam.setLocation(new Vector3f(0,y,0).addLocal(target));
 		cam.lookAt(target, new Vector3f(0, 0, -1));
+
+		app.getListener().setLocation(cam.getLocation());
+		app.getListener().setRotation(cam.getRotation());
+		app.getAudioRenderer().setEnvironment(new Environment(Environment.Garage));
 	}
 //	Spatial makeEnvironment() {
 //		Node root = new Node("environment");
@@ -296,8 +302,8 @@ public class PageInGame extends AppState0 {
 		geom.setQueueBucket(Bucket.Transparent);
 		BillboardControl billboarder = new BillboardControl();
 		//billboarder.setAlignment(BillboardControl.Alignment.Camera);
-//		geom.addControl(billboarder);
-//		n.attachChild(geom);
+		//		geom.addControl(billboarder);
+		//		n.attachChild(geom);
 		Node anchor0 = new Node();
 		anchor0.addControl(billboarder);
 		anchor0.attachChild(geom);
@@ -330,8 +336,8 @@ public class PageInGame extends AppState0 {
 		geom.setQueueBucket(Bucket.Transparent);
 		BillboardControl billboarder = new BillboardControl();
 		//billboarder.setAlignment(BillboardControl.Alignment.Camera);
-//		geom.addControl(billboarder);
-//		n.attachChild(geom);
+		//		geom.addControl(billboarder);
+		//		n.attachChild(geom);
 		Node anchor0 = new Node();
 		anchor0.addControl(billboarder);
 		anchor0.attachChild(geom);
@@ -397,14 +403,44 @@ public class PageInGame extends AppState0 {
 	}
 
 	class Control4EatPellet extends AbstractControl {
-		private Vector3f v3 = new Vector3f();
+		final AudioNode audioBoost;
+		final AudioNode audioPellet;
+		final Vector3f v3 = new Vector3f();
+
+		public Control4EatPellet() {
+			audioPellet = new AudioNode(app.getAssetManager(), "Sounds/pellet.wav", false); // buffered
+			audioPellet.setLooping(false);
+			audioPellet.setPositional(true);
+			audioBoost = new AudioNode(app.getAssetManager(), "Sounds/boost.wav", false); // buffered
+			audioBoost.setLooping(false);
+			audioBoost.setPositional(true);
+		}
+		public void setSpatial(Spatial spatial) {
+			super.setSpatial(spatial);
+			if (spatial == null) {
+				audioPellet.removeFromParent();
+				audioBoost.removeFromParent();
+			} else {
+				Node root = (Node)spatial;
+				root.attachChild(audioPellet);
+				root.attachChild(audioBoost);
+			}
+		}
+
 		@Override
 		protected void controlUpdate(float tpf) {
 			v3.set(getSpatial().getLocalTranslation());
 			int x = (int)Math.floor(v3.x);
 			int z = (int)Math.floor(v3.z);
-			if (PageInGame.this.tiles.has(Tiles.PELLET, x, z) || PageInGame.this.tiles.has(Tiles.BOOST, x, z)) {
+			Spatial s = PageInGame.this.pellets[x + z * tiles.width];
+			//if (PageInGame.this.tiles.has(Tiles.PELLET, x, z)) {PageInGame.this.tiles.has(Tiles.BOOST, x, z)) {
+			if (s != null) {
 				eatPellet(x,z);
+				if (s.getUserData("BOOST") == Boolean.TRUE){
+					audioBoost.playInstance();
+				} else {
+					audioPellet.playInstance();
+				}
 			}
 		}
 

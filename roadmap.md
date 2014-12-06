@@ -10,7 +10,7 @@ x add speed power (x3) to pacman + juicy ribon/tail
 
 # polish 1
 - a start screen overlay (press any key to start)
-- a sound fx when pacman eat pellet, energizer pellet, game start
+x a sound fx when pacman eat pellet, energizer pellet
 - add voice "Game Over !" record
 - volumetric light around pacman
 
