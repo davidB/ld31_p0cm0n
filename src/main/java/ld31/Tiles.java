@@ -41,7 +41,7 @@ class Tiles {
 	public final static int GHOST_ALLOWED	= 0x01;
 	public final static int PLAYER_ALLOWED	= 0x02;
 	public final static int PELLET			= 0x04;
-	public final static int ENERGIZER		= 0x08;
+	public final static int BOOST			= 0x08;
 
 	public final int width = tiles_pacmanclassic_W;
 	public final int height = tiles_pacmanclassic_H;

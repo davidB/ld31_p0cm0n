@@ -57,7 +57,8 @@ public class PageInGame extends AppState0 {
 	public final TimeCounter timeCount = new TimeCounter();
 	public final float speedXMax = 12f;
 	public final float speedZMax = 12f;
-	public final long timeMax = (long)(((((float)tiles.width) / speedXMax) * tiles.height + (((float)tiles.height) / speedZMax)));
+	float boostTimer = 0;
+	public final long timeMax = 0;//(long)(((((float)tiles.width) / speedXMax) * tiles.height + (((float)tiles.height) / speedZMax)));
 
 	@Override
 	protected void doInitialize() {
@@ -156,6 +157,9 @@ public class PageInGame extends AppState0 {
 			FxPlatformExecutor.runOnFxApplication(() -> {
 				hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
 			});
+			if (s.getUserData("BOOST") == Boolean.TRUE) {
+				boostTimer += 3.0f;
+			}
 		}
 		if (pelletAte >= pelletTotal) end();
 	}
@@ -221,7 +225,8 @@ public class PageInGame extends AppState0 {
 			g.setMaterial(mat);
 			root.attachChild(g);
 
-			Geometry light = Helpers4Lights.newSpotLight("playerLight", 10f, 1000f, color, app.getAssetManager());
+			//Geometry light = Helpers4Lights.newSpotLight("playerLight", 10f, 50f, color, app.getAssetManager());
+			Geometry light = Helpers4Lights.newPointLight("playerLight", 10f, color, app.getAssetManager());
 			light.setLocalTranslation(0, 5f - 1f, 0);
 			root.attachChild(light);
 			//dsp.addLight(pointLight, true);
@@ -262,6 +267,13 @@ public class PageInGame extends AppState0 {
 					root.attachChild(pellet);
 					pellets[id] = pellet;
 					pelletTotal++;
+				} else if (tiles.has(Tiles.BOOST, x, z)) {
+					Spatial pellet = makePelletBoost();
+					pellet.setName("p" + id);
+					translateToTile(pellet, x, z, 0.4f);
+					root.attachChild(pellet);
+					pellets[id] = pellet;
+					pelletTotal++;
 				}
 			}
 		}
@@ -273,6 +285,40 @@ public class PageInGame extends AppState0 {
 		ColorRGBA color = ColorRGBA.White;
 		AssetManager assetManager = app.getAssetManager();
 		float size = 0.4f;
+		Geometry geom = new Geometry("particle", new Quad(size, size));
+		geom.setLocalTranslation(-0.5f * size, 0.5f * -size, 0.0f);
+		Material lightMaterial = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+		lightMaterial.setColor("Color", color);
+		lightMaterial.setTexture("LightMap", assetManager.loadTexture("Textures/pellet.jpg"));
+		lightMaterial.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Additive);
+		lightMaterial.getAdditionalRenderState().setDepthWrite(false);
+		geom.setMaterial(lightMaterial);
+		geom.setQueueBucket(Bucket.Transparent);
+		BillboardControl billboarder = new BillboardControl();
+		//billboarder.setAlignment(BillboardControl.Alignment.Camera);
+//		geom.addControl(billboarder);
+//		n.attachChild(geom);
+		Node anchor0 = new Node();
+		anchor0.addControl(billboarder);
+		anchor0.attachChild(geom);
+		n.attachChild(anchor0);
+
+		//pointLight.setColor(ColorRGBA.randomColor().multLocal(0.1f));
+		Geometry pointLight = Helpers4Lights.newPointLight("light", 2f, color, assetManager);
+		pointLight.center();
+		n.attachChild(pointLight);
+		//dsp.addLight(pointLight, true);
+		appStateDeferredRendering.processor.lights.ar.add.onNext(pointLight);
+		n.center();
+		return n;
+	}
+
+	Spatial makePelletBoost() {
+		Node n = new Node("pellet");
+		n.setUserData("BOOST", true);
+		ColorRGBA color = ColorRGBA.Orange;
+		AssetManager assetManager = app.getAssetManager();
+		float size = 0.8f;
 		Geometry geom = new Geometry("particle", new Quad(size, size));
 		geom.setLocalTranslation(-0.5f * size, 0.5f * -size, 0.0f);
 		Material lightMaterial = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -326,8 +372,15 @@ public class PageInGame extends AppState0 {
 		protected void controlUpdate(float tpf) {
 			v3.set(getSpatial().getLocalTranslation());
 			// loop from top to bottom, left to right
-			float nx = ((float)tiles.width + v3.x + speedX * tpf) % ((float)tiles.width);
-			float nz = ((float)tiles.height + v3.z + speedZ * tpf) % ((float)tiles.height);
+			float boost = 1;
+			if (boostTimer > 0) {
+				boostTimer = (float)Math.max(0, boostTimer - tpf);
+				boost = 2;
+				ColorRGBA c = (boostTimer > 0) ? ColorRGBA.Orange : ColorRGBA.Yellow;
+				((Geometry)((Node)spatial).getChild(0)).getMaterial().setColor("Color", c);
+			}
+			float nx = ((float)tiles.width + v3.x + boost * speedX * tpf) % ((float)tiles.width);
+			float nz = ((float)tiles.height + v3.z + boost * speedZ * tpf) % ((float)tiles.height);
 			if (PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(speedX) * 0.5), (int)Math.floor(nz+Math.signum(speedZ) * 0.5))) {
 				getSpatial().setLocalTranslation(nx, v3.y, nz);
 			} else if (speedX != 0 && PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(speedX) * 0.5), (int)Math.floor(v3.z))) {
@@ -350,7 +403,7 @@ public class PageInGame extends AppState0 {
 			v3.set(getSpatial().getLocalTranslation());
 			int x = (int)Math.floor(v3.x);
 			int z = (int)Math.floor(v3.z);
-			if (PageInGame.this.tiles.has(Tiles.PELLET, x, z)) {
+			if (PageInGame.this.tiles.has(Tiles.PELLET, x, z) || PageInGame.this.tiles.has(Tiles.BOOST, x, z)) {
 				eatPellet(x,z);
 			}
 		}

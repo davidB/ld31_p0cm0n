@@ -3,15 +3,15 @@ x display regular pellet in correct place (pellet are lights)
 x display a pacman (cube) that move via control only on allowed tile (keyboard control / ZQSD/WASD / arrow)
 x pacman eat pellet => pellet disappear, countdown pellet
 x display timer on hud
-- 0 pellet => end screen overlay + retry button
-- add speed power (x3) to pacman + juicy ribon/tail
+x 0 pellet => end screen overlay + retry button
+x add speed power (x3) to pacman + juicy ribon/tail
+- add wall (in blender ? , generated from the map ??)
 - package native + jar (getdown plugin) + try it on linux and windows
 
 # polish 1
 - a start screen overlay (press any key to start)
 - a sound fx when pacman eat pellet, energizer pellet, game start
 - add voice "Game Over !" record
-- add wall (in blender ? , generated from the map ??)
 - volumetric light around pacman
 
 # enhance (ghosts)
