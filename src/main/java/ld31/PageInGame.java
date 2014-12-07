@@ -573,7 +573,7 @@ public class PageInGame extends AppState0 {
 	}
 
 	class Control4EatPellet extends AbstractControl {
-		final AudioNode audioBoost;
+		final AudioNode audioSpeedMode;
 		final AudioNode audioPellet;
 		final Vector3f v3 = new Vector3f();
 
@@ -581,19 +581,19 @@ public class PageInGame extends AppState0 {
 			audioPellet = new AudioNode(app.getAssetManager(), "Sounds/pellet.wav", false); // buffered
 			audioPellet.setLooping(false);
 			audioPellet.setPositional(true);
-			audioBoost = new AudioNode(app.getAssetManager(), "Sounds/boost.wav", false); // buffered
-			audioBoost.setLooping(false);
-			audioBoost.setPositional(true);
+			audioSpeedMode = new AudioNode(app.getAssetManager(), "Sounds/speed_mode.ogg", false); // buffered
+			audioSpeedMode.setLooping(false);
+			audioSpeedMode.setPositional(true);
 		}
 		public void setSpatial(Spatial spatial) {
 			super.setSpatial(spatial);
 			if (spatial == null) {
 				audioPellet.removeFromParent();
-				audioBoost.removeFromParent();
+				audioSpeedMode.removeFromParent();
 			} else {
 				Node root = (Node)spatial;
 				root.attachChild(audioPellet);
-				root.attachChild(audioBoost);
+				root.attachChild(audioSpeedMode);
 			}
 		}
 
@@ -607,7 +607,7 @@ public class PageInGame extends AppState0 {
 			if (s != null) {
 				eatPellet(x,z);
 				if (s.getUserData("BOOST") == Boolean.TRUE){
-					audioBoost.playInstance();
+					audioSpeedMode.play();
 				} else {
 					audioPellet.playInstance();
 				}
@@ -624,6 +624,23 @@ public class PageInGame extends AppState0 {
 		final Vector3f[] directions = new Vector3f[]{ new Vector3f(-1,0,0), new Vector3f(0,0,-1), new Vector3f(1,0,0), new Vector3f(0,0,1)};
 		int directionId = 0;
 		final Vector3f v3 = new Vector3f();
+		final AudioNode audioSpawn;
+
+		Control4Ghost() {
+			audioSpawn = new AudioNode(app.getAssetManager(), "Sounds/boost.wav", false); // buffered
+			audioSpawn.setLooping(false);
+			audioSpawn.setPositional(true);
+		}
+
+		public void setSpatial(Spatial spatial) {
+			super.setSpatial(spatial);
+			if (spatial != null) {
+				app.getRootNode().attachChild(audioSpawn);
+				audioSpawn.play();
+			} else {
+				audioSpawn.removeFromParent();
+			}
+		};
 
 		@Override
 		protected void controlUpdate(float tpf) {

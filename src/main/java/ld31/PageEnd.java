@@ -37,10 +37,12 @@ class PageEnd extends AppState0 {
 		hud = hudTools.newHud("Interface/HudEnd.fxml", new HudEnd());
 		audioGameOver = new AudioNode(app.getAssetManager(), "Sounds/game_over.ogg", false); // buffered
 		audioGameOver.setLooping(false);
-		audioGameOver.setPositional(false);
+		audioGameOver.setPositional(true);
+		app.getRootNode().attachChild(audioGameOver);
 		audioTryAgain = new AudioNode(app.getAssetManager(), "Sounds/try_again.ogg", false); // buffered
 		audioTryAgain.setLooping(false);
-		audioTryAgain.setPositional(false);
+		audioTryAgain.setPositional(true);
+		app.getRootNode().attachChild(audioTryAgain);
 	}
 
 	@Override
