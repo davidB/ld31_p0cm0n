@@ -25,7 +25,7 @@ targetCompatibility = '1.8'
 // your own implementation.
 def mainClass = (!hasProperty('mainClass')) ? 'ld31.Main' : ext.mainClass
 
-version = '0.1.0'
+version = '0.2.0'
 group = 'net.alchim31.games'
 
 repositories {
