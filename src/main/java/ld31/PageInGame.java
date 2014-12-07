@@ -52,6 +52,7 @@ public class PageInGame extends AppState0 {
 	private final AppStateDebug appStateDebug;
 	private final PageEnd pageEnd;
 	private final PageIntro pageIntro;
+	private final static ColorRGBA[] ghostColors = new ColorRGBA[]{ColorRGBA.Pink, ColorRGBA.Red, ColorRGBA.Cyan, ColorRGBA.Brown};
 
 	private Hud<HudInGame> hud;
 
@@ -359,10 +360,11 @@ public class PageInGame extends AppState0 {
 		Node root = (Node) app.getRootNode().getChild("ghosts");
 		Spatial g = null;
 		if (root != null) {
-			g = makeGhost(ColorRGBA.Pink);
+			g = makeGhost(ghostColors[i%ghostColors.length]);
 			g.setLocalTranslation(14, 0, 11.5f);
 			ghosts[i] = g;
 			root.attachChild(g);
+			g.addControl(new Control4Ghost(i));
 		}
 		return g;
 	}
@@ -384,7 +386,6 @@ public class PageInGame extends AppState0 {
 		g.setHighLife(1.5f);
 		g.getParticleInfluencer().setVelocityVariation(0.3f);
 		g.center();
-		g.addControl(new Control4Ghost());
 		return g;
 	}
 
@@ -581,6 +582,7 @@ public class PageInGame extends AppState0 {
 			audioPellet = new AudioNode(app.getAssetManager(), "Sounds/pellet.wav", false); // buffered
 			audioPellet.setLooping(false);
 			audioPellet.setPositional(true);
+			audioPellet.setVolume(0.4f);
 			audioSpeedMode = new AudioNode(app.getAssetManager(), "Sounds/speed_mode.ogg", false); // buffered
 			audioSpeedMode.setLooping(false);
 			audioSpeedMode.setPositional(true);
@@ -625,8 +627,14 @@ public class PageInGame extends AppState0 {
 		int directionId = 0;
 		final Vector3f v3 = new Vector3f();
 		final AudioNode audioSpawn;
+		boolean chaseMode = false;
+		float timeoutChangeMod = 2;
+		int changeModCount = 0;
+		final int id;
+		final Vector3f[] scatterTargets = new Vector3f[]{new Vector3f(2, 0, -2), new Vector3f(tiles.width - 2, 0, tiles.height + 2), new Vector3f(2, 0, tiles.height + 2), new Vector3f(tiles.width - 2, 0, -2)};
 
-		Control4Ghost() {
+		Control4Ghost(int id) {
+			this.id = id;
 			audioSpawn = new AudioNode(app.getAssetManager(), "Sounds/boost.wav", false); // buffered
 			audioSpawn.setLooping(false);
 			audioSpawn.setPositional(true);
@@ -644,6 +652,7 @@ public class PageInGame extends AppState0 {
 
 		@Override
 		protected void controlUpdate(float tpf) {
+			updateMode(tpf);
 			Vector3f pos = spatial.getLocalTranslation();
 			int x = (int)Math.floor(pos.x);
 			int z = (int)Math.floor(pos.z);
@@ -659,9 +668,23 @@ public class PageInGame extends AppState0 {
 			}
 		}
 
+		protected void updateMode(float tpf) {
+			timeoutChangeMod -= tpf;
+			if (timeoutChangeMod <= 0) {
+				changeModCount++;
+				chaseMode = !chaseMode;
+				//timeoutChangeMod = (chaseMode)?20:7;
+				timeoutChangeMod = (chaseMode)?15:Math.max(2, 6 - changeModCount);
+			}
+		}
+
+		Vector3f findTarget() {
+			return (chaseMode)? players[0].getWorldTranslation() : scatterTargets[id % scatterTargets.length];
+		}
+
 		int nextDirection(int x, int z, int offset) {
 			// entering in new title
-			Vector3f target = players[0].getWorldTranslation();
+			Vector3f target = findTarget();
 			float d = Float.MAX_VALUE;
 			int ni = directionId;
 			for(int i = offset; i < 4; i++) {
