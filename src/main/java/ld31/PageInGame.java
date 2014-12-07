@@ -20,6 +20,8 @@ import rx_ext.Iterable4AddRemove;
 import com.jme3.asset.AssetManager;
 import com.jme3.audio.AudioNode;
 import com.jme3.audio.Environment;
+import com.jme3.effect.ParticleEmitter;
+import com.jme3.effect.ParticleMesh;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
@@ -436,6 +438,34 @@ public class PageInGame extends AppState0 {
 		public float speedX = 0f;
 		public float speedZ = 0f;
 		private Vector3f v3 = new Vector3f();
+		//ParticleEmitter boostE;
+		boolean boosting = false;
+
+		@Override
+		public void setSpatial(Spatial spatial) {
+			super.setSpatial(spatial);
+//			if (spatial != null) {
+//				boostE = new ParticleEmitter("Emitter", ParticleMesh.Type.Triangle, 30);
+//				Material mat_red = new Material(app.getAssetManager(), "Common/MatDefs/Misc/Particle.j3md");
+//				mat_red.setTexture("Texture", app.getAssetManager().loadTexture("Effects/boost.png"));
+//				boostE.setMaterial(mat_red);
+//				boostE.setImagesX(2);
+//				boostE.setImagesY(2); // 2x2 texture animation
+//				boostE.setEndColor(ColorRGBA.Yellow);
+//				boostE.setStartColor(ColorRGBA.Orange);
+//				boostE.getParticleInfluencer().setInitialVelocity(new Vector3f(0, 2, 0));
+//				boostE.setStartSize(1.3f);
+//				boostE.setEndSize(0.1f);
+//				boostE.setGravity(0, 0, 0);
+//				boostE.setLowLife(1f);
+//				boostE.setHighLife(3f);
+//				boostE.getParticleInfluencer().setVelocityVariation(0.3f);
+//				((Node)spatial).attachChild(boostE);
+//			} else {
+//				boostE.removeFromParent();
+//				boostE = null;
+//			}
+		}
 		@Override
 		protected void controlUpdate(float tpf) {
 			v3.set(getSpatial().getLocalTranslation());
@@ -444,8 +474,17 @@ public class PageInGame extends AppState0 {
 			if (boostTimer > 0) {
 				boostTimer = (float)Math.max(0, boostTimer - tpf);
 				boost = 2;
-				ColorRGBA c = (boostTimer > 0) ? ColorRGBA.Orange : ColorRGBA.Yellow;
-				((Geometry)((Node)spatial).getChild(0)).getMaterial().setColor("Color", c);
+			}
+			if (boostTimer > 0 && ! boosting) {
+				boosting = true;
+				((Geometry)((Node)spatial).getChild(0)).getMaterial().setColor("Color", ColorRGBA.Orange);
+				//((Node)spatial).attachChild(boostE);
+				//boostE.setEnabled(true);
+			} else if (boostTimer <= 0 && boosting) {
+				boosting = false;
+				((Geometry)((Node)spatial).getChild(0)).getMaterial().setColor("Color", ColorRGBA.Yellow);
+				//boostE.setEnabled(false);
+				//((Node)spatial).detachChild(boostE);
 			}
 			float nx = ((float)tiles.width + v3.x + boost * speedX * tpf) % ((float)tiles.width);
 			float nz = ((float)tiles.height + v3.z + boost * speedZ * tpf) % ((float)tiles.height);

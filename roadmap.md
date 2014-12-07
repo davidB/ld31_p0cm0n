@@ -40,3 +40,7 @@ x a sound fx when pacman eat pellet, energizer pellet
 - screenshot
 - write text
 - submit game ld, jmonkey, indiemag
+
+
+# Arghh
+- can"t suspend/resume particle emission from regular jme particle emitter (without freezing existing one or remove them)
