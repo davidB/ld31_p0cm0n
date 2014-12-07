@@ -29,6 +29,7 @@ import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
 import com.jme3.renderer.queue.RenderQueue.Bucket;
+import com.jme3.scene.BatchNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -247,8 +248,8 @@ public class PageInGame extends AppState0 {
 	}
 
 	Spatial makeWalls(){
-		//BatchNode root = new BatchNode("walls");
-		Node root = new Node("walls");
+		BatchNode root = new BatchNode("walls");
+		//Node root = new Node("walls");
 		Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
 		//Material mat = new Material(app.getAssetManager(), "Common/MatDefs/Misc/Unshaded.j3md");
 		mat.setColor("Color", ColorRGBA.Green);
@@ -266,7 +267,7 @@ public class PageInGame extends AppState0 {
 				}
 			}
 		}
-		//root.batch();
+		root.batch();
 		return root;
 	}
 
