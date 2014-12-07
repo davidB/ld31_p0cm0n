@@ -553,6 +553,8 @@ public class PageInGame extends AppState0 {
 				//boostE.setEnabled(false);
 				//((Node)spatial).detachChild(boostE);
 			}
+//			if (speedX == 0) v3.x = (float)Math.floor(v3.x) + 0.5f;
+//			if (speedZ == 0) v3.z = (float)Math.floor(v3.z) + 0.5f;
 			float nx = ((float)tiles.width + v3.x + boost * speedX * tpf) % ((float)tiles.width);
 			float nz = ((float)tiles.height + v3.z + boost * speedZ * tpf) % ((float)tiles.height);
 			if (PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(speedX) * 0.5), (int)Math.floor(nz+Math.signum(speedZ) * 0.5))) {
