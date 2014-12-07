@@ -140,8 +140,8 @@ public class HudSettings implements Initializable {
 		loadDisplayModes(settingsInit);
 		fullscreen.setSelected(settingsInit.isFullscreen());
 		vsync.setSelected(settingsInit.isVSync());
-		//showStats.setSelected(settingsInit.is) = new DefaultCheckboxModel();
-		//showFps.setSelected(settingsInit.isFullscreen());
+		showStats.setSelected(false);
+		showFps.setSelected(true);
 		loadAntialias(settingsInit);
 		Runnable saveSettings = () -> {
 			try {

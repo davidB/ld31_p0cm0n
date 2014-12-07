@@ -3,7 +3,6 @@ package ld31;
 import javax.inject.Inject;
 
 import jme3_ext.AppState0;
-import jme3_ext_deferred.AppState4ViewDeferredTexture;
 import lombok.RequiredArgsConstructor;
 
 import com.jme3.app.DebugKeysAppState;
@@ -19,7 +18,9 @@ public class AppStateDebug extends AppState0 {
 		System.out.println("DEBUG ENABLE");
 		AppStateManager stateManager = app.getStateManager();
 		stateManager.detach(stateManager.getState(FlyCamAppState.class));
-		stateManager.attach(new StatsAppState());
+		//stateManager.attach(new StatsAppState());
+		stateManager.getState(StatsAppState.class).setDisplayStatView(false);
+		stateManager.getState(StatsAppState.class).setDisplayFps(true);
 		stateManager.attach(new DebugKeysAppState());
 
 		app.getInputManager().setCursorVisible(true);
