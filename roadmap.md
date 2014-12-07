@@ -35,6 +35,7 @@ x a sound fx when pacman eat pellet, energizer pellet
 - volumetric light around pacman
 
 # publish
+- disable debug (log, println, stats, (fps ?),...)
 - package native + jar (getdown plugin) + try it on linux and windows
 - screenshot
 - write text
