@@ -70,9 +70,9 @@ public class PageInGame extends AppState0 {
 	@Override
 	protected void doInitialize() {
 		hud = hudTools.newHud("Interface/HudInGame.fxml", hudController);
+		app.getStateManager().attach(pageIntro);
 		app.getStateManager().attach(appStateDeferredRendering);
 		app.getStateManager().attach(appStateDebug);
-		app.getStateManager().attach(pageIntro);
 	}
 
 	void reset() {
