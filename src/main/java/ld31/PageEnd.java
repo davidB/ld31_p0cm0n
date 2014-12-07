@@ -71,6 +71,7 @@ class PageEnd extends AppState0 {
 				app.enqueue(()-> {
 					app.getStateManager().getState(PageInGame.class).reset();
 					app.getStateManager().detach(this);
+					app.getStateManager().getState(PageInGame.class).start();
 					return true;
 				});
 			});

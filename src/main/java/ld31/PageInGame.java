@@ -66,8 +66,7 @@ public class PageInGame extends AppState0 {
 	final Spatial[] ghosts = new Spatial[4];
 	final Spatial[] players = new Spatial[1];
 	public final TimeCounter timeCount = new TimeCounter();
-	public final float speedXMax = 12f;
-	public final float speedZMax = 12f;
+	public final float speedMax = 12f;
 	float boostTimer = 0;
 	public final long timeMax = 0;//(long)(((((float)tiles.width) / speedXMax) * tiles.height + (((float)tiles.height) / speedZMax)));
 
@@ -108,39 +107,11 @@ public class PageInGame extends AppState0 {
 				controls.exit.value.subscribe((v) -> {
 					if (!v) hud.controller.quit.fire();
 				})
-				, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * speedXMax;})
-				, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -speedZMax;})
+				, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * speedMax;})
+				, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -speedMax;})
 				, controls.moveX.value.subscribe((v) -> {if (v != 0) timeCount.start();})
 				, controls.moveZ.value.subscribe((v) -> {if (v != 0) timeCount.start();})
 				);
-		app.enqueue(() -> {
-			setupCamera();
-			spawnScene();
-			activatePlayer(true);
-			FxPlatformExecutor.runOnFxApplication(() -> {
-				hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
-				hud.controller.timeCount.setText(String.format("%d", score()));
-
-				//HACK TO force focus (keyboard) on play area
-				//hud.region.focusedProperty().addListener((v) -> System.out.println("focus change : " + v));
-				//hud.region.requestFocus();
-				Scene scene = hud.region.getScene();
-				//scene.getWindow().requestFocus();
-				//Event.fireEvent(scene.getWindow(), new MouseEvent(MouseEvent.MOUSE_CLICKED, 10, 10, (int)scene.getWindow().getX() + 10, (int)scene.getWindow().getY() + 10, MouseButton.PRIMARY, 1, true, true, true, true, true, true, true, true, true, true, null));
-				try {
-					java.awt.Robot r = new java.awt.Robot();
-//					r.mouseMove((int)scene.getWindow().getX() + 10, (int)scene.getWindow().getY() + 10);
-					r.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
-					r.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			});
-			return true;
-		});
-		timeCount.reset();
 	}
 
 
@@ -203,10 +174,45 @@ public class PageInGame extends AppState0 {
 			}
 		}
 		if (pelletAte >= pelletTotal) end(true);
+		if (pelletAte == 40) spawnGhost(0);
+		else if (pelletAte == 80) spawnGhost(1);
+		else if (pelletAte == 130) spawnGhost(2);
+		else if (pelletAte == 200) spawnGhost(3);
 	}
 
 	public long score() {
 		return (timeMax - (long)Math.floor(timeCount.time));
+	}
+
+	public void start() {
+		timeCount.reset();
+		app.enqueue(() -> {
+			setupCamera();
+			spawnScene();
+			activatePlayer(true);
+			FxPlatformExecutor.runOnFxApplication(() -> {
+				hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
+				hud.controller.timeCount.setText(String.format("%d", score()));
+
+				//HACK TO force focus (keyboard) on play area
+				//hud.region.focusedProperty().addListener((v) -> System.out.println("focus change : " + v));
+				//hud.region.requestFocus();
+				Scene scene = hud.region.getScene();
+				//scene.getWindow().requestFocus();
+				//Event.fireEvent(scene.getWindow(), new MouseEvent(MouseEvent.MOUSE_CLICKED, 10, 10, (int)scene.getWindow().getX() + 10, (int)scene.getWindow().getY() + 10, MouseButton.PRIMARY, 1, true, true, true, true, true, true, true, true, true, true, null));
+				try {
+					java.awt.Robot r = new java.awt.Robot();
+//					r.mouseMove((int)scene.getWindow().getX() + 10, (int)scene.getWindow().getY() + 10);
+					r.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+					r.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			});
+			return true;
+		});
 	}
 
 	private void end(boolean success) {
@@ -332,6 +338,7 @@ public class PageInGame extends AppState0 {
 				root.addControl(c4t);
 				root.addControl(new Control4EatPellet());
 			} else {
+				scene.detachChildNamed("ghosts");
 				root.removeControl(c4t);
 				root.removeControl(Control4EatPellet.class);
 			}
@@ -342,16 +349,26 @@ public class PageInGame extends AppState0 {
 		Node root = (Node) app.getRootNode().getChild("ghosts");
 		if (root == null) {
 			root = new Node("ghosts");
-			Spatial g = makeGhost(ColorRGBA.Pink);
-			g.setLocalTranslation(14, 0, 11.5f);
-			ghosts[0] = g;
-			root.attachChild(g);
 		}
+		root.detachAllChildren();
+		for (int i = 0; i < ghosts.length; i++) ghosts[i] = null;
 		return root;
 	}
 
+	Spatial spawnGhost(int i) {
+		Node root = (Node) app.getRootNode().getChild("ghosts");
+		Spatial g = null;
+		if (root != null) {
+			g = makeGhost(ColorRGBA.Pink);
+			g.setLocalTranslation(14, 0, 11.5f);
+			ghosts[i] = g;
+			root.attachChild(g);
+		}
+		return g;
+	}
+
 	Spatial makeGhost(ColorRGBA c) {
-		ParticleEmitter g = new ParticleEmitter("Emitter", ParticleMesh.Type.Triangle, 30);
+		ParticleEmitter g = new ParticleEmitter("Emitter", ParticleMesh.Type.Triangle, 15);
 		Material mat_red = new Material(app.getAssetManager(), "Common/MatDefs/Misc/Particle.j3md");
 		mat_red.setTexture("Texture", app.getAssetManager().loadTexture("Effects/boost.png"));
 		g.setMaterial(mat_red);
@@ -363,10 +380,11 @@ public class PageInGame extends AppState0 {
 		g.setStartSize(1.3f);
 		g.setEndSize(0.1f);
 		g.setGravity(0, 0, 0);
-		g.setLowLife(1f);
-		g.setHighLife(3f);
+		g.setLowLife(0.5f);
+		g.setHighLife(1.5f);
 		g.getParticleInfluencer().setVelocityVariation(0.3f);
 		g.center();
+		g.addControl(new Control4Ghost());
 		return g;
 	}
 
@@ -597,6 +615,65 @@ public class PageInGame extends AppState0 {
 		@Override
 		protected void controlRender(RenderManager rm, ViewPort vp) {
 		}
+	}
+
+	class Control4Ghost extends AbstractControl {
+		final float speed = PageInGame.this.speedMax * 0.5f;
+		final Vector3f[] directions = new Vector3f[]{ new Vector3f(-1,0,0), new Vector3f(0,0,-1), new Vector3f(1,0,0), new Vector3f(0,0,1)};
+		int directionId = 0;
+		final Vector3f v3 = new Vector3f();
+
+		@Override
+		protected void controlUpdate(float tpf) {
+			Vector3f pos = spatial.getLocalTranslation();
+			int x = (int)Math.floor(pos.x);
+			int z = (int)Math.floor(pos.z);
+			if (checkNext(tpf, directions[directionId], v3)) {
+				getSpatial().setLocalTranslation(v3);
+				int nx = (int)Math.floor(v3.x);
+				int nz = (int)Math.floor(v3.z);
+				if (nx != x || nz != z) {
+					directionId = nextDirection(nx, nz, 0);
+				}
+			} else {
+				directionId = nextDirection(x, z, 1);
+			}
+		}
+
+		int nextDirection(int x, int z, int offset) {
+			// entering in new title
+			Vector3f target = players[0].getWorldTranslation();
+			float d = Float.MAX_VALUE;
+			int ni = directionId;
+			for(int i = offset; i < 4; i++) {
+				if (i == 2) continue; // opposite direction are forbidden
+				int ti = (directionId + i) % directions.length;
+				float td = distanceOfPlayer0(directions[ti], x, z, target);
+				if (d > td) {
+					d = td;
+					ni = ti;
+				}
+			}
+			return ni;
+		}
+
+		boolean checkNext(float tpf, Vector3f direction, Vector3f store ) {
+			v3.set(direction).multLocal(speed * tpf).addLocal(spatial.getLocalTranslation());
+			return PageInGame.this.tiles.has(Tiles.GHOST_ALLOWED, (int)Math.floor(v3.x+ direction.x * 0.5), (int)Math.floor(v3.z+ direction.z * 0.5));
+		}
+
+		float distanceOfPlayer0(Vector3f direction, int x, int z, Vector3f target) {
+			float d = Float.MAX_VALUE;
+			if (PageInGame.this.tiles.has(Tiles.GHOST_ALLOWED, (int)( x + direction.x), (int)( z + direction.z))) {
+				d = v3.set(x + direction.x + 0.5f, 0, z + direction.z + 0.5f).distance(target);
+			}
+			return d;
+		}
+
+		@Override
+		protected void controlRender(RenderManager rm, ViewPort vp) {
+		}
+
 	}
 }
 
