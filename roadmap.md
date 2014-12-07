@@ -7,11 +7,12 @@ x 0 pellet => end screen overlay + retry button
 x add speed power (x3) to pacman + juicy ribon/tail
 x add wall (in blender ? , generated from the map ??)
 x remove some pellets like in the classic pacman
-- intro screen : "arrow + eat all pointlight as quick as possible"
+x intro screen : "arrow + eat all pointlight as quick as you can" (press any key to start)
 - package native + jar (getdown plugin) + try it on linux and windows
 
 # polish 1
 x a sound fx when pacman eat pellet, energizer pellet
+- particle animation when boost (+ change light color ?)
 
 # enhance (ghosts)
 - add 1 ghost (cube + color) when ghost hit pacman : game over
@@ -24,12 +25,12 @@ x a sound fx when pacman eat pellet, energizer pellet
 - a sound fx when ghost hit pacman
 - ghosts are particle emitter like fire ball, smoke when fright
 - add joystick support
-- try cube moving animation (mini jump ?)
+! try cube moving animation (mini jump ?)
 - add jump power(x3) to pacman
 
 # polish 3
 - use noise (perlin,...) to generate level of wall
-- a start screen overlay (press any key to start)
+- a start screen overlay
 - add voice "Game Over !" record
 - volumetric light around pacman
 

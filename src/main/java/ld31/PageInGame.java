@@ -1,6 +1,8 @@
 /// License [CC0](http://creativecommons.org/publicdomain/zero/1.0/)
 package ld31;
 
+import javafx.scene.Scene;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -27,7 +29,6 @@ import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
 import com.jme3.renderer.queue.RenderQueue.Bucket;
-import com.jme3.scene.BatchNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -47,6 +48,7 @@ public class PageInGame extends AppState0 {
 	private final AppStateDeferredRendering appStateDeferredRendering;
 	private final AppStateDebug appStateDebug;
 	private final PageEnd pageEnd;
+	private final PageIntro pageIntro;
 
 	private Hud<HudInGame> hud;
 
@@ -69,6 +71,7 @@ public class PageInGame extends AppState0 {
 		hud = hudTools.newHud("Interface/HudInGame.fxml", hudController);
 		app.getStateManager().attach(appStateDeferredRendering);
 		app.getStateManager().attach(appStateDebug);
+		app.getStateManager().attach(pageIntro);
 	}
 
 	void reset() {
@@ -95,7 +98,7 @@ public class PageInGame extends AppState0 {
 				});
 			});
 		});
-
+		//inputMapper.last.subscribe((v) -> {System.out.println("last evt : " + v + " .. " + hud.region.isFocused() + " .. " + Helpers4Javafx.findFocused(hud.region.getParent()));});
 		inputSub = Subscriptions.from(
 				controls.exit.value.subscribe((v) -> {
 					if (!v) hud.controller.quit.fire();
@@ -112,12 +115,30 @@ public class PageInGame extends AppState0 {
 			FxPlatformExecutor.runOnFxApplication(() -> {
 				hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
 				hud.controller.timeCount.setText(String.format("%d", score()));
-				hud.controller.timeCount.requestFocus();
+
+				//HACK TO force focus (keyboard) on play area
+				//hud.region.focusedProperty().addListener((v) -> System.out.println("focus change : " + v));
+				//hud.region.requestFocus();
+				Scene scene = hud.region.getScene();
+				//scene.getWindow().requestFocus();
+				//Event.fireEvent(scene.getWindow(), new MouseEvent(MouseEvent.MOUSE_CLICKED, 10, 10, (int)scene.getWindow().getX() + 10, (int)scene.getWindow().getY() + 10, MouseButton.PRIMARY, 1, true, true, true, true, true, true, true, true, true, true, null));
+				try {
+					java.awt.Robot r = new java.awt.Robot();
+//					r.mouseMove((int)scene.getWindow().getX() + 10, (int)scene.getWindow().getY() + 10);
+					r.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+					r.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
 			});
 			return true;
 		});
 		timeCount.reset();
 	}
+
+
 
 	@Override
 	protected void doUpdate(float tpf) {
