@@ -21,11 +21,13 @@ import com.jme3.audio.Environment;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
 import com.jme3.renderer.queue.RenderQueue.Bucket;
+import com.jme3.scene.BatchNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -180,7 +182,7 @@ public class PageInGame extends AppState0 {
 		scene.getChildren().clear();
 		scene.attachChild(makePellets());
 		scene.attachChild(makePlayer());
-		//			scene.attachChild(makeEnvironment());
+		scene.attachChild(makeEnvironment());
 		app.getRootNode().attachChild(scene);
 	}
 
@@ -205,18 +207,55 @@ public class PageInGame extends AppState0 {
 		app.getListener().setRotation(cam.getRotation());
 		app.getAudioRenderer().setEnvironment(new Environment(Environment.Garage));
 	}
-//	Spatial makeEnvironment() {
-//		Node root = new Node("environment");
-//		ColorRGBA color = ColorRGBA.White;
-//		Geometry g = new Geometry("Player", new Quad(tiles.width, tiles.height));
-//		g.center();
-//		Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
-//		mat.setColor("Color", color);
-//		g.setMaterial(mat);
-//		root.attachChild(g);
-//		//root.setLocalTranslation(root.getLocalTranslation().add(0, 0, tiles.height * 0.5f));
-//		return root;
-//	}
+	Spatial makeEnvironment() {
+		Node root = new Node("environment");
+		root.attachChild(makeWalls());
+		//root.setLocalTranslation(root.getLocalTranslation().add(0, 0, tiles.height * 0.5f));
+		return root;
+	}
+
+	Spatial makeFloor(){
+		ColorRGBA color = ColorRGBA.White;
+		Geometry g = new Geometry("Player", new Quad(tiles.width, tiles.height));
+		g.center();
+		Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
+		mat.setColor("Color", color);
+		g.setMaterial(mat);
+		return g;
+	}
+
+	Spatial makeWalls(){
+		//BatchNode root = new BatchNode("walls");
+		Node root = new Node("walls");
+		Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
+		//Material mat = new Material(app.getAssetManager(), "Common/MatDefs/Misc/Unshaded.j3md");
+		mat.setColor("Color", ColorRGBA.Green);
+		for(int x = 0 ; x < tiles.width; x++) {
+			for(int z = 0 ; z < tiles.height; z++) {
+				if (tiles.has(Tiles.EMPTY, x, z)){
+					boolean top = tiles.has(Tiles.EMPTY, x, z - 1, Tiles.EMPTY)||!tiles.has(Tiles.PLAYER_ALLOWED, x, z - 1, Tiles.EMPTY);
+					boolean bottom = tiles.has(Tiles.EMPTY, x, z + 1, Tiles.EMPTY)||!tiles.has(Tiles.PLAYER_ALLOWED, x, z + 1, Tiles.EMPTY);
+					boolean right = tiles.has(Tiles.EMPTY, x + 1, z, Tiles.EMPTY)||!tiles.has(Tiles.PLAYER_ALLOWED, x + 1, z, Tiles.EMPTY);
+					boolean left = tiles.has(Tiles.EMPTY, x - 1, z, Tiles.EMPTY)||!tiles.has(Tiles.PLAYER_ALLOWED, x - 1, z, Tiles.EMPTY);
+					if (top && left) root.attachChild(makeBrick(x,z, mat));
+					if (top && right) root.attachChild(makeBrick(x+0.5f,z, mat));
+					if (bottom && left) root.attachChild(makeBrick(x, z+0.5f, mat));
+					if (bottom && right) root.attachChild(makeBrick(x +0.5f, z + 0.5f, mat));
+				}
+			}
+		}
+		//root.batch();
+		return root;
+	}
+
+	Spatial makeBrick(float x, float z, Material mat) {
+		float margin = 0.01f;
+		//TODO use noise (perlin,...) to generate level
+		float y = 0.5f + FastMath.nextRandomFloat() * 2f;
+		Geometry g = new Geometry("brick", new Box(new Vector3f(x+margin, 0, z+margin), new Vector3f(x+0.5f-margin, y, z + 0.5f-margin)));
+		g.setMaterial(mat);
+		return g;
+	}
 
 	Spatial makePlayer() {
 		Node root = (Node) app.getRootNode().getChild("player");
