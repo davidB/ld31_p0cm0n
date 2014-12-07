@@ -109,14 +109,14 @@ public class PageInGame extends AppState0 {
 			setupCamera();
 			spawnScene();
 			activatePlayer(true);
+			FxPlatformExecutor.runOnFxApplication(() -> {
+				hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
+				hud.controller.timeCount.setText(String.format("%d", score()));
+				hud.controller.timeCount.requestFocus();
+			});
 			return true;
 		});
 		timeCount.reset();
-		FxPlatformExecutor.runOnFxApplication(() -> {
-			hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
-			hud.controller.timeCount.setText(String.format("%d", score()));
-			hud.controller.timeCount.requestFocus();
-		});
 	}
 
 	@Override
@@ -157,12 +157,13 @@ public class PageInGame extends AppState0 {
 			s.removeFromParent();
 			appStateDeferredRendering.processor.lights.ar.remove.onNext((Geometry)((Node)s).getChild("light"));
 			PageInGame.this.pellets[x + z * tiles.width] = null;
-			PageInGame.this.pelletAte += 1;
-			FxPlatformExecutor.runOnFxApplication(() -> {
-				hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
-			});
 			if (s.getUserData("BOOST") == Boolean.TRUE) {
 				boostTimer += 3.0f;
+			} else {
+				PageInGame.this.pelletAte += 1;
+				FxPlatformExecutor.runOnFxApplication(() -> {
+					hud.controller.pelletCount.setText(String.format("%d", (pelletTotal - pelletAte)));
+				});
 			}
 		}
 		if (pelletAte >= pelletTotal) end();
@@ -278,7 +279,7 @@ public class PageInGame extends AppState0 {
 			appStateDeferredRendering.processor.lights.ar.add.onNext(light);
 		}
 
-		translateToTile(root, 14, 17, 0);
+		root.setLocalTranslation(14, 0, 23.5f);
 		activatePlayer(false);
 		return root;
 	}
@@ -318,7 +319,6 @@ public class PageInGame extends AppState0 {
 					translateToTile(pellet, x, z, 0.4f);
 					root.attachChild(pellet);
 					pellets[id] = pellet;
-					pelletTotal++;
 				}
 			}
 		}
