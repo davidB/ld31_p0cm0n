@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 public class HudEnd {
 //	@FXML
 //	public Region root;
+	@FXML
+	public Label time;
 
 	@FXML
 	public Label timeCount;

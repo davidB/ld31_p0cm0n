@@ -11,7 +11,7 @@
          <center>
             <VBox alignment="CENTER" BorderPane.alignment="CENTER">
                <children>
-                  <Label id="time" text="%time" />
+                  <Label id="time" fx:id="time" text="%time" />
                   <Label id="timeCount" fx:id="timeCount" alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="0" textAlignment="CENTER" />
                   <Button id="retry" fx:id="retry" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%retry" textAlignment="CENTER" />
                </children>

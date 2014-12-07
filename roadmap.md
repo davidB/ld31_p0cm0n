@@ -15,15 +15,15 @@ x a sound fx when pacman eat pellet, energizer pellet
 - particle animation when boost (+ change light color ?)
 
 # enhance (ghosts)
-- add 1 ghost (cube + color) when ghost hit pacman : game over
+x add 1 ghost (cube + color) when ghost hit pacman : game over
 - add first IA for ghost
 - add 2nd ghost + IA
 - add 3nd ghost + IA
 - add 4nd ghost + IA
 
 # polish 2
-- a sound fx when ghost hit pacman
-- ghosts are particle emitter like fire ball, smoke when fright
+x a sound fx when ghost hit pacman
+x ghosts are particle emitter like fire ball, smoke when fright
 - add joystick support
 ! try cube moving animation (mini jump ?)
 - add jump power(x3) to pacman
@@ -31,7 +31,7 @@ x a sound fx when pacman eat pellet, energizer pellet
 # polish 3
 - use noise (perlin,...) to generate level of wall
 - a start screen overlay
-- add voice "Game Over !" record
+x add voice "Game Over !" record
 - volumetric light around pacman
 
 # publish

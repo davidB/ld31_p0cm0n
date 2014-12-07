@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import rx.Subscription;
 import rx.subscriptions.Subscriptions;
 
+import com.jme3.audio.AudioNode;
 import com.jme3x.jfx.FxPlatformExecutor;
 
 /**
@@ -26,11 +27,22 @@ class PageEnd extends AppState0 {
 	private boolean prevCursorVisible;
 	private Hud<HudEnd> hud;
 	private Subscription inputSub;
+	private AudioNode audioGameOver;
+	private AudioNode audioTryAgain;
+	public boolean success = true;
+
 
 	@Override
 	public void doInitialize() {
 		hud = hudTools.newHud("Interface/HudEnd.fxml", new HudEnd());
+		audioGameOver = new AudioNode(app.getAssetManager(), "Sounds/game_over.ogg", false); // buffered
+		audioGameOver.setLooping(false);
+		audioGameOver.setPositional(false);
+		audioTryAgain = new AudioNode(app.getAssetManager(), "Sounds/try_again.ogg", false); // buffered
+		audioTryAgain.setLooping(false);
+		audioTryAgain.setPositional(false);
 	}
+
 	@Override
 	protected void doEnable() {
 		prevCursorVisible = app.getInputManager().isCursorVisible();
@@ -40,7 +52,21 @@ class PageEnd extends AppState0 {
 
 		FxPlatformExecutor.runOnFxApplication(() -> {
 			HudEnd p = hud.controller;
-			p.timeCount.setText(String.format("%d",app.getStateManager().getState(PageInGame.class).score()));
+			if (success) {
+				p.time.setVisible(true);
+				p.timeCount.setText(String.format("%d",app.getStateManager().getState(PageInGame.class).score()));
+				app.enqueue(()->{
+					audioTryAgain.play();
+					return true;
+				});
+			} else {
+				p.time.setVisible(false);
+				p.timeCount.setText("Game Over !!");
+				app.enqueue(()->{
+					audioGameOver.play();
+					return true;
+				});
+			}
 			p.retry.onActionProperty().set((v) -> {
 				app.enqueue(()-> {
 					app.getStateManager().getState(PageInGame.class).reset();

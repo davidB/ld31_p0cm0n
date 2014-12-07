@@ -63,6 +63,8 @@ public class PageInGame extends AppState0 {
 	public int pelletTotal;
 	public int pelletAte;
 	final Spatial[] pellets = new Spatial[tiles.width * tiles.height];
+	final Spatial[] ghosts = new Spatial[4];
+	final Spatial[] players = new Spatial[1];
 	public final TimeCounter timeCount = new TimeCounter();
 	public final float speedXMax = 12f;
 	public final float speedZMax = 12f;
@@ -151,6 +153,16 @@ public class PageInGame extends AppState0 {
 				hud.controller.timeCount.setText(String.format("%d", score()));
 			});
 		}
+		// brut force collision
+		for(Spatial p : players) {
+			for(Spatial g : ghosts) {
+				if (p == null || g == null) continue;
+				if (g.getWorldTranslation().distance(p.getWorldTranslation()) <= 0.6f) {
+					end(false);
+					break;
+				}
+ 			}
+		}
 	}
 
 	@Override
@@ -190,16 +202,17 @@ public class PageInGame extends AppState0 {
 				});
 			}
 		}
-		if (pelletAte >= pelletTotal) end();
+		if (pelletAte >= pelletTotal) end(true);
 	}
 
 	public long score() {
 		return (timeMax - (long)Math.floor(timeCount.time));
 	}
 
-	private void end() {
+	private void end(boolean success) {
 		timeCount.stop();
 		activatePlayer(false);
+		pageEnd.success = success;
 		app.getStateManager().attach(pageEnd);
 	}
 
@@ -208,6 +221,7 @@ public class PageInGame extends AppState0 {
 		scene.attachChild(makePellets());
 		scene.attachChild(makePlayer());
 		scene.attachChild(makeEnvironment());
+		scene.attachChild(makeGhosts());
 		app.getRootNode().attachChild(scene);
 	}
 
@@ -232,10 +246,11 @@ public class PageInGame extends AppState0 {
 		app.getListener().setRotation(cam.getRotation());
 		app.getAudioRenderer().setEnvironment(new Environment(Environment.Garage));
 	}
+
 	Spatial makeEnvironment() {
 		Node root = new Node("environment");
 		root.attachChild(makeWalls());
-		//root.setLocalTranslation(root.getLocalTranslation().add(0, 0, tiles.height * 0.5f));
+		//root.attachChild(makeFloor());
 		return root;
 	}
 
@@ -246,6 +261,7 @@ public class PageInGame extends AppState0 {
 		Material mat = new Material(app.getAssetManager(), "MatDefs/deferred/gbuffer.j3md");
 		mat.setColor("Color", color);
 		g.setMaterial(mat);
+		//root.setLocalTranslation(root.getLocalTranslation().add(0, 0, tiles.height * 0.5f));
 		return g;
 	}
 
@@ -304,6 +320,7 @@ public class PageInGame extends AppState0 {
 		}
 
 		root.setLocalTranslation(14, 0, 23.5f);
+		players[0] = root;
 		activatePlayer(false);
 		return root;
 	}
@@ -319,6 +336,38 @@ public class PageInGame extends AppState0 {
 				root.removeControl(Control4EatPellet.class);
 			}
 		}
+	}
+
+	Spatial makeGhosts() {
+		Node root = (Node) app.getRootNode().getChild("ghosts");
+		if (root == null) {
+			root = new Node("ghosts");
+			Spatial g = makeGhost(ColorRGBA.Pink);
+			g.setLocalTranslation(14, 0, 11.5f);
+			ghosts[0] = g;
+			root.attachChild(g);
+		}
+		return root;
+	}
+
+	Spatial makeGhost(ColorRGBA c) {
+		ParticleEmitter g = new ParticleEmitter("Emitter", ParticleMesh.Type.Triangle, 30);
+		Material mat_red = new Material(app.getAssetManager(), "Common/MatDefs/Misc/Particle.j3md");
+		mat_red.setTexture("Texture", app.getAssetManager().loadTexture("Effects/boost.png"));
+		g.setMaterial(mat_red);
+		g.setImagesX(2);
+		g.setImagesY(2); // 2x2 texture animation
+		g.setEndColor(ColorRGBA.LightGray);
+		g.setStartColor(c);
+		g.getParticleInfluencer().setInitialVelocity(new Vector3f(0, 2, 0));
+		g.setStartSize(1.3f);
+		g.setEndSize(0.1f);
+		g.setGravity(0, 0, 0);
+		g.setLowLife(1f);
+		g.setHighLife(3f);
+		g.getParticleInfluencer().setVelocityVariation(0.3f);
+		g.center();
+		return g;
 	}
 
 	Spatial makePellets(){
