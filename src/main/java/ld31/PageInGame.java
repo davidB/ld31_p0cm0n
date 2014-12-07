@@ -371,6 +371,7 @@ public class PageInGame extends AppState0 {
 		n.attachChild(anchor0);
 
 		//pointLight.setColor(ColorRGBA.randomColor().multLocal(0.1f));
+		//Geometry pointLight = Helpers4Lights.newPointLight("light", 0.8f+FastMath.nextRandomFloat() * 1.2f, color, assetManager);
 		Geometry pointLight = Helpers4Lights.newPointLight("light", 2f, color, assetManager);
 		pointLight.center();
 		n.attachChild(pointLight);
@@ -405,7 +406,7 @@ public class PageInGame extends AppState0 {
 		n.attachChild(anchor0);
 
 		//pointLight.setColor(ColorRGBA.randomColor().multLocal(0.1f));
-		Geometry pointLight = Helpers4Lights.newPointLight("light", 2f, color, assetManager);
+		Geometry pointLight = Helpers4Lights.newPointLight("light", 2.2f, color, assetManager);
 		pointLight.center();
 		n.attachChild(pointLight);
 		//dsp.addLight(pointLight, true);
