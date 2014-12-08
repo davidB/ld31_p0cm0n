@@ -103,15 +103,19 @@ public class PageInGame extends AppState0 {
 				});
 			});
 		});
-		//inputMapper.last.subscribe((v) -> {System.out.println("last evt : " + v + " .. " + hud.region.isFocused() + " .. " + Helpers4Javafx.findFocused(hud.region.getParent()));});
+		//inputMapper.last.subscribe((v) -> {System.out.println("last evt : " + v);});
 		inputSub = Subscriptions.from(
 				controls.exit.value.subscribe((v) -> {
 					if (!v) hud.controller.quit.fire();
 				})
 				, controls.moveX.value.subscribe((v) -> {c4t.speedX = v * speedMax;})
 				, controls.moveZ.value.subscribe((v) -> {c4t.speedZ = v * -speedMax;})
+				, controls.moveXN.value.subscribe((v) -> {c4t.speedXN = v * speedMax;})
+				, controls.moveZN.value.subscribe((v) -> {c4t.speedZN = v * -speedMax;})
 				, controls.moveX.value.subscribe((v) -> {if (v != 0) timeCount.start();})
 				, controls.moveZ.value.subscribe((v) -> {if (v != 0) timeCount.start();})
+				, controls.moveXN.value.subscribe((v) -> {if (v != 0) timeCount.start();})
+				, controls.moveZN.value.subscribe((v) -> {if (v != 0) timeCount.start();})
 				);
 	}
 
@@ -198,7 +202,7 @@ public class PageInGame extends AppState0 {
 				//HACK TO force focus (keyboard) on play area
 				//hud.region.focusedProperty().addListener((v) -> System.out.println("focus change : " + v));
 				//hud.region.requestFocus();
-				Scene scene = hud.region.getScene();
+				//Scene scene = hud.region.getScene();
 				//scene.getWindow().requestFocus();
 				//Event.fireEvent(scene.getWindow(), new MouseEvent(MouseEvent.MOUSE_CLICKED, 10, 10, (int)scene.getWindow().getX() + 10, (int)scene.getWindow().getY() + 10, MouseButton.PRIMARY, 1, true, true, true, true, true, true, true, true, true, true, null));
 				try {
@@ -505,6 +509,8 @@ public class PageInGame extends AppState0 {
 	class Control4Translation extends AbstractControl {
 		public float speedX = 0f;
 		public float speedZ = 0f;
+		public float speedXN = 0f;
+		public float speedZN = 0f;
 		private Vector3f v3 = new Vector3f();
 		//ParticleEmitter boostE;
 		boolean boosting = false;
@@ -556,13 +562,15 @@ public class PageInGame extends AppState0 {
 			}
 //			if (speedX == 0) v3.x = (float)Math.floor(v3.x) + 0.5f;
 //			if (speedZ == 0) v3.z = (float)Math.floor(v3.z) + 0.5f;
-			float nx = ((float)tiles.width + v3.x + boost * speedX * tpf) % ((float)tiles.width);
-			float nz = ((float)tiles.height + v3.z + boost * speedZ * tpf) % ((float)tiles.height);
-			if (PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(speedX) * 0.5), (int)Math.floor(nz+Math.signum(speedZ) * 0.5))) {
+			float sx = speedX + speedXN;
+			float sz = speedZ + speedZN;
+			float nx = ((float)tiles.width + v3.x + boost * sx * tpf) % ((float)tiles.width);
+			float nz = ((float)tiles.height + v3.z + boost * sz * tpf) % ((float)tiles.height);
+			if (PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(sx) * 0.5), (int)Math.floor(nz+Math.signum(sz) * 0.5))) {
 				getSpatial().setLocalTranslation(nx, v3.y, nz);
-			} else if (speedX != 0 && PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(speedX) * 0.5), (int)Math.floor(v3.z))) {
+			} else if (sx != 0 && PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(nx+Math.signum(sx) * 0.5), (int)Math.floor(v3.z))) {
 				getSpatial().setLocalTranslation(nx, v3.y, v3.z);
-			} else if (speedZ != 0 && PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(v3.x), (int)Math.floor(nz+Math.signum(speedZ) * 0.5))) {
+			} else if (sz != 0 && PageInGame.this.tiles.has(Tiles.PLAYER_ALLOWED, (int)Math.floor(v3.x), (int)Math.floor(nz+Math.signum(sz) * 0.5))) {
 				getSpatial().setLocalTranslation(v3.x, v3.y, nz);
 			}
 		}

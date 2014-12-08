@@ -13,7 +13,9 @@ public class Commands {
 	public final Command<Boolean> exit = new Command<>("quit");
 	public final Command<Boolean> def = new Command<>("default");
 	public final Command<Float> moveZ = new Command<>("moveZ");
+	public final Command<Float> moveZN = new Command<>("moveZN");
 	public final Command<Float> moveX = new Command<>("moveX");
+	public final Command<Float> moveXN = new Command<>("moveXN");
 	public final Command<Float> rotateY = new Command<>("rotateY");
 	public final Command<Float> rotateX = new Command<>("rotateX");
 	public final Command<Boolean> action1 = new Command<>("action1");
