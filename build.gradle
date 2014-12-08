@@ -80,11 +80,13 @@ task copyDeps(type: Copy) {
 getdown {
 	urlbase = "http://alchim31.net/download/ld31"
 	mainClassName = mainClass
-	jvmArgs = ["-ea"]
+	jvmArgs = ["-ea", "-Dlogdir=%APPDIR%/log"]
 	checklatest = false
 	//platforms = [Platform.LINUX_I586, Platform.LINUX_X64, Platform.WINDOWS_I586] //Platform.values()
 	//platforms = [Platform.LINUX_I586] //Platform.values()
-	tmplGetdownTxt = tmplGetdownTxt + "\nallow_offline = true"
+	tmplGetdownTxt = tmplGetdownTxt + """
+allow_offline = true
+"""
 }
 //project.afterEvaluate {
 //	project.getdown.distSpec.eachFile {
