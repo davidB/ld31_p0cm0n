@@ -25,7 +25,7 @@ targetCompatibility = '1.8'
 // your own implementation.
 def mainClass = (!hasProperty('mainClass')) ? 'ld31.Main' : ext.mainClass
 
-version = '0.3.1'
+version = '0.3.2'
 group = 'net.alchim31.games'
 
 repositories {
@@ -48,7 +48,7 @@ dependencies {
 	compile 'com.squareup.dagger:dagger-compiler:1.2.2'
 	compile 'com.netflix.rxjava:rxjava-core:0.19.2'
 	compile 'net.alchim31.jme3:jme3_ext:0.1.0'
-	compile 'net.alchim31.jme3:jme3_ext_deferred:0.1.0'
+	compile 'net.alchim31.jme3:jme3_ext_deferred:0.1.2'
 	runtime "com.jme3:jme3-lwjgl:${v_jme}"
 	runtime("com.jme3:jme3-desktop:${v_jme}"){
 		exclude module: "jinput"
