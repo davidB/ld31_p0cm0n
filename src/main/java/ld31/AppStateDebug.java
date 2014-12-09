@@ -17,7 +17,7 @@ public class AppStateDebug extends AppState0 {
 	protected void doEnable() {
 		System.out.println("DEBUG ENABLE");
 		AppStateManager stateManager = app.getStateManager();
-		stateManager.detach(stateManager.getState(FlyCamAppState.class));
+		//stateManager.detach(stateManager.getState(FlyCamAppState.class));
 		//stateManager.attach(new StatsAppState());
 		stateManager.getState(StatsAppState.class).setDisplayStatView(false);
 		stateManager.getState(StatsAppState.class).setDisplayFps(true);

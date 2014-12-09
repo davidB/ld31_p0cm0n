@@ -43,7 +43,7 @@ public class Main {
 		//		setAspectRatio(app, 16, 9);
 		SetupHelpers.disableDefaults(app);
 		SetupHelpers.setDebug(app, false);
-		SetupHelpers.logJoystickInfo(app.getInputManager());
+		//SetupHelpers.logJoystickInfo(app.getInputManager());
 		initGui(guiManager);
 		initPages(pageManager, app, false);
 	}

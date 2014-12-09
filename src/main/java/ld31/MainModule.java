@@ -20,6 +20,7 @@ import jme3_ext_deferred.MatIdManager;
 import jme3_ext_deferred.MaterialConverter;
 import jme3_ext_deferred.SceneProcessor4Deferred;
 
+import com.jme3.app.FlyCamAppState;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.AppState;
 import com.jme3.asset.AssetManager;
@@ -91,6 +92,8 @@ class MainModule {
 		SimpleApplication app = new SimpleApplication(){
 			@Override
 			public void simpleInitApp() {
+				flyCam.setEnabled(false);
+				stateManager.detach(stateManager.getState(FlyCamAppState.class));
 				initializedSignal.countDown();
 			}
 
@@ -125,7 +128,7 @@ class MainModule {
 			e.printStackTrace();
 		}
 		settings.setTitle(resources.getString("title"));
-		settings.setUseJoysticks(true);
+		settings.setUseJoysticks(false);
 		//settings.setGammaCorrection(true); //TODO jme 3.1.0
 		settings.setResolution(1280, 720);
 		settings.setVSync(false);
